@@ -190,6 +190,7 @@ void StartConfiguringMode()
     } while (!rok);
 
     in_configuration_mode = true;
+    reset_btn_pressed = false;
     while (!reset_btn_pressed) {
       unsigned tcp_connection_id = 0;
       char* message = readTCPMessage( 1000, &tcp_connection_id, false, NULL );
@@ -576,7 +577,7 @@ char* getReply(unsigned int wait, bool skip_on_ok)
     }
   }
 
-  if (checkReplyQuery(reply, NULL)) {
+  if (!in_configuration_mode && checkReplyQuery(reply, NULL)) {
     executeInputMessage(reply);
     reply[0] = 0;
   }
