@@ -8,7 +8,6 @@
 
 #define SERVER_PORT 51015
 
-#define MAX_ATTEMPTS 5
 #define MAX_CONNECTIONS 4
 #define REPLY_BUFFER 512
 
@@ -19,7 +18,7 @@
 
 #define CONNECTIONS_ALL 5
 
-#define CONNECTION_ESP_PIN 48
+#define CONNECTION_ESP_PIN 26
 
 // FOR ARDUINO UNO
 // Arduino Pin 2 to RX
@@ -32,8 +31,6 @@
 // Arduino RX2 for TX
 // Baud rate can be up to 38400
 #define espSerial Serial2
-
-const char line[] = "-----\r\n";
 
 char reply[REPLY_BUFFER];
 
@@ -181,10 +178,11 @@ void StartConfiguringMode()
         continue;
       }
 
-      DEBUG_WRITE("You need to connect to wifi-host"); DEBUG_WRITELN(HOST_WIFI_SSID);
-      DEBUG_WRITE("Then use configuration programm to connect to"); DEBUG_WRITELN(ipAddress);
+      DEBUG_WRITE("You need to connect to wifi-host "); DEBUG_WRITELN(HOST_WIFI_SSID);
+      DEBUG_WRITE("Then use configuration programm to connect to "); DEBUG_WRITELN(ipAddress);
       DEBUG_WRITELN("and perform setup operations...");
       
+      delay(500);
       setLCDLines("Waiting at host:", HOST_WIFI_SSID);
       delay(4000);
       setLCDLines("Server IP:", ipAddress);
@@ -194,7 +192,7 @@ void StartConfiguringMode()
     in_configuration_mode = true;
     while (!reset_btn_pressed) {
       unsigned tcp_connection_id = 0;
-      char* message = readTCPMessage( 1000, &tcp_connection_id, false );
+      char* message = readTCPMessage( 1000, &tcp_connection_id, false, NULL );
       char* param;
       if (message) {
        
@@ -225,6 +223,8 @@ void StartConfiguringMode()
         closeConnection(5);
         startServer(1, SERVER_PORT);
       }
+      
+      delay(50);
     }
     
     digitalWrite(CONNECTION_ESP_PIN, LOW);
@@ -355,13 +355,17 @@ void StartConnection(bool reconnect)
 
       DEBUG_WRITELN("Send identification Number");
       setLCDText("Identification");
-      
       reply = sendMessage(connection_id, "DS="+String(station_id), MAX_ATTEMPTS);
       rok = replyIsOK(reply);
       
       DEBUG_WRITELN("Send sensors info");
       setLCDLines("Sending sensors", "info");
       rok = sendSensorsInfo(connection_id);
+      
+      DEBUG_WRITELN("Send controls info");
+      setLCDLines("Sending controls", "info");
+      rok = sendControlsInfo(connection_id);
+      
     } while (!rok);
     
     connected_to_server = true;
@@ -389,6 +393,7 @@ bool startServer(unsigned connection, unsigned port)
     rok = replyIsOK(reply);
     attempts++;
   } while (!rok && attempts<MAX_ATTEMPTS);
+  if(!rok) errors_count++;
   return rok;
 }
 
@@ -406,6 +411,7 @@ bool closeConnection(unsigned connection) {
     rok = replyIsOK(reply);
     attempts++;
   } while (!rok && attempts<MAX_ATTEMPTS);
+  if(!rok) errors_count++;
   return rok;
 }
 
@@ -413,7 +419,7 @@ char* sendMessage(unsigned connection_id, String message, unsigned max_attempts)
 {
   DEBUG_WRITE("Sending to "); DEBUG_WRITE(connection_id);  DEBUG_WRITELN(" message:");
   DEBUG_WRITELN(message.c_str());
-  DEBUG_WRITELN(line);
+  DEBUG_WRITELN(DEBUG_LINE_SEPARATOR);
   
   unsigned attempts = 0;
   unsigned written = 0;
@@ -433,21 +439,25 @@ char* sendMessage(unsigned connection_id, String message, unsigned max_attempts)
     espSerial.print(spart.length(), DEC);
     espSerial.print("\r\n");
     reply = getReply( 5000, true );
-    if (!replyIsOK(reply) && max_attempts && attempts<max_attempts) {
+    if (!replyIsOK(reply)) {
       errors_count++;
-      attempts++;
-      DEBUG_WRITELN("Sending Error: Retry");
-      continue;
+      if (max_attempts && attempts<max_attempts) {
+        attempts++;
+        DEBUG_WRITELN("Sending Error: Retry");
+        continue;
+      }
     }
-    
+
     espSerial.print(spart.c_str());
     espSerial.print("\r\n");
     reply = getReply( 5000, true );
-    if (!replyIsOK(reply) && max_attempts && attempts<max_attempts) {
+    if (!replyIsOK(reply)) {
       errors_count++;
-      attempts++;
-      DEBUG_WRITELN("Sending Error: Retry");
-      continue;
+      if (max_attempts && attempts<max_attempts) {
+        attempts++;
+        DEBUG_WRITELN("Sending Error: Retry");
+        continue;
+      }
     }
 
     written += buffer_len;
@@ -465,7 +475,6 @@ char* readReply(unsigned int wait, bool skip_on_ok)
   if(espSerial.available())
   {
     result = getReply( wait, skip_on_ok );
-    if (!replyIsOK(result)) errors_count++;
   }
   return result;
 }
@@ -484,16 +493,16 @@ bool checkReplyQuery(char* message, unsigned* connect_start)
     }
   }
 
-  if (foundConnect) {
+  if (foundConnect && connect_start) {
     *connect_start = i;
   }
 
   return foundConnect;
 }
 
-char* readTCPMessage(unsigned int wait, unsigned* tcp_connection_id, bool from_reply_buffer)
+char* readTCPMessage(unsigned int wait, unsigned* tcp_connection_id, bool from_reply_buffer, char* from_reply)
 {
-  char *message = readReply( wait, false );
+  char *message = from_reply ? from_reply : readReply( wait, false );
 
   if (!message && from_reply_buffer) {
     message = reply;
@@ -558,7 +567,7 @@ char* getReply(unsigned int wait, bool skip_on_ok)
       {
         if ( (reply[lastPos]=='O') && (reply[lastPos+1]=='K') ) { 
           foundOK = true;
-          delay(100);
+          delay(30);
           while(espSerial.available()) { espSerial.read(); }
           DEBUG_WRITELN("Found OK");
           break;
@@ -566,7 +575,17 @@ char* getReply(unsigned int wait, bool skip_on_ok)
       }
     }
   }
-  DEBUG_WRITELN(line); DEBUG_WRITELN(reply); DEBUG_WRITELN(line);
+
+  if (checkReplyQuery(reply, NULL)) {
+    executeInputMessage(reply);
+    reply[0] = 0;
+  }
+
+  DEBUG_WRITELN(DEBUG_LINE_SEPARATOR); 
+  if (reply[0]) {
+    DEBUG_WRITELN(reply); DEBUG_WRITELN(DEBUG_LINE_SEPARATOR);
+  }
+
   return reply;
 }
 
