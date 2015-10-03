@@ -33,8 +33,9 @@
 
 byte errors_count = 0;
 
-volatile unsigned tone_frequency;
-volatile bool tone_state;
+volatile unsigned tone_frequency = 0;
+volatile bool tone_state = false;
+volatile bool tone_periodic = false;
 volatile bool reset_btn_pressed = false;
 volatile bool config_btn_pressed = false;
 volatile bool signal_btn_pressed = false;
@@ -51,7 +52,8 @@ void setup()
   pinMode(CONTROL_BTN_PIN, INPUT);
   pinMode(TONE_PIN, OUTPUT);
   pinMode(PROG_LED_PIN, OUTPUT);
-  
+  digitalWrite(TONE_PIN, HIGH);
+
   initESP();
   initLCD();
   delay(100);
@@ -61,6 +63,8 @@ void setup()
   delay(100);
   StartConnection(true);
   attachInterrupt(CONTROL_BTN_INTERRUPT, ControlBTN_Rising, CONTROL_BTN_INTERRUPT_MODE);
+  tone_state = false;
+  tone_periodic = false;
   reset_btn_pressed = false;
   config_btn_pressed = false;
   signal_btn_pressed = false;
@@ -102,6 +106,7 @@ void tone_period()
     tone(TONE_PIN, tone_frequency);
   } else {
     noTone(TONE_PIN);
+    digitalWrite(TONE_PIN, HIGH);
   }
   tone_state = !tone_state;
   if (prog_led_tone_control) {
@@ -198,6 +203,7 @@ void executeInputMessage(char *input_message)
         if (period>0) {
           DEBUG_WRITE("Starting tone. F="); DEBUG_WRITE(tone_frequency); DEBUG_WRITE(" P="); DEBUG_WRITELN(period);
           tone_state = false;
+          tone_periodic = true;
           if (prog_led_tone_control) {
             digitalWrite(PROG_LED_PIN, LOW);
             prog_led_state = false;
@@ -212,11 +218,14 @@ void executeInputMessage(char *input_message)
             prog_led_state = true;
           }
           tone_state = true;
+          tone_periodic = false;
         }
       } else {
         DEBUG_WRITELN("Stopping tone");
         noTone(TONE_PIN);
+        digitalWrite(TONE_PIN, HIGH);
         tone_state = false;
+        tone_periodic = false;
         if (prog_led_tone_control) {
           digitalWrite(PROG_LED_PIN, LOW);
           prog_led_tone_control = false;

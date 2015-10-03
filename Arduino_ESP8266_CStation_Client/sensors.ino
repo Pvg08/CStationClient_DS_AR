@@ -69,9 +69,11 @@ void HC_State_Changed()
 
 void NS_State_Rising()
 {
-  ns_state = true;
-  ns_info_sended = false;
-  SensorsActionStarted();
+  if (!tone_frequency || (tone_periodic && tone_state)) {
+    ns_state = true;
+    ns_info_sended = false;
+    SensorsActionStarted();
+  }
 }
 
 void SensorOuter_State_Changed()

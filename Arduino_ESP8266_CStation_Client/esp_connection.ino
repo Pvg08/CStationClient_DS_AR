@@ -7,6 +7,7 @@
 #define HOST_WIFI_ECN 0
 
 #define SERVER_PORT 51015
+#define CLIENT_PORT 51016
 
 #define MAX_CONNECTIONS 4
 #define REPLY_BUFFER 512
@@ -170,7 +171,7 @@ void StartConfiguringMode()
       } while (!rok && attempts<MAX_ATTEMPTS);
       if (!rok) continue;
 
-      rok = startServer(1, SERVER_PORT);
+      rok = startServer(1, CLIENT_PORT);
       if (!rok) {
         DEBUG_WRITELN("Can't start the server. Let's try again");
         setLCDLines("Error: Can't", "start server");
@@ -222,7 +223,7 @@ void StartConfiguringMode()
         }
         
         closeConnection(5);
-        startServer(1, SERVER_PORT);
+        startServer(1, CLIENT_PORT);
       }
       
       delay(50);
@@ -346,7 +347,7 @@ void StartConnection(bool reconnect)
         continue;
       }
 
-      rok = startServer(1, SERVER_PORT);
+      rok = startServer(1, CLIENT_PORT);
       if (!rok) {
         DEBUG_WRITELN("Can't start the server. Let's try again");
         setLCDLines("Error: Can't", "start server");
@@ -422,6 +423,7 @@ char* sendMessage(unsigned connection_id, String message, unsigned max_attempts)
   DEBUG_WRITELN(message.c_str());
   DEBUG_WRITELN(DEBUG_LINE_SEPARATOR);
   
+  message = message + "\r\n";
   unsigned attempts = 0;
   unsigned written = 0;
   unsigned str_length = message.length();
