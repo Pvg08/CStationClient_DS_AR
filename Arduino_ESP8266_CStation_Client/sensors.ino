@@ -63,6 +63,7 @@ void HC_State_Changed()
   if (hc_state) {
     hc_info_sended = false;
     SensorsActionStarted();
+    ON_PresenceDetected();
   }
   digitalWrite(HC_SIGNAL_PIN, hc_state ? HIGH : LOW);
 }
@@ -73,6 +74,7 @@ void NS_State_Rising()
     ns_state = true;
     ns_info_sended = false;
     SensorsActionStarted();
+    ON_PresenceDetected();
   }
 }
 

@@ -79,6 +79,8 @@ void StartConfiguringMode()
   setLCDLines("Configuration", "      MODE");
   delay(1000);
   do {
+      updateLCDAutoState();
+
       DEBUG_WRITELN("Reset the module");
       setLCDText("Reset");
       attempts = 0;
@@ -248,6 +250,8 @@ void StartConnection(bool reconnect)
     connected_to_wifi = false;
     connected_to_server = false;
     do {
+      updateLCDAutoState();
+
       if (strlen(wifi_ssid)==0 || strlen(wifi_passw)==0 || strlen(server_ip_addr)==0 || !station_id) {
         DEBUG_WRITELN("Need to set SSID, password and server ip");
         setLCDLines("Need ", "SSID, PWD, SRVIP");
@@ -323,6 +327,8 @@ void StartConnection(bool reconnect)
   if (reconnect && connected_to_wifi && !connected_to_server) 
   {
     do {
+      updateLCDAutoState();
+      
       DEBUG_WRITELN("Connect to the server");
       setLCDLines("Connect to", "server");
       connection_id++;

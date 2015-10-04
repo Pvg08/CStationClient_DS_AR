@@ -42,6 +42,7 @@ volatile bool signal_btn_pressed = false;
 volatile bool signal_btn_sended = false;
 volatile bool prog_led_state = false;
 volatile bool prog_led_tone_control = false;
+volatile bool need_auto_state_lcd_update = false;
 
 void setup()
 {
@@ -69,6 +70,7 @@ void setup()
   config_btn_pressed = false;
   signal_btn_pressed = false;
   signal_btn_sended = true;
+  need_auto_state_lcd_update = false;
 }
 
 void loop()
@@ -86,6 +88,10 @@ void loop()
     reset_btn_pressed = false;
     config_btn_pressed = false;
     return;
+  }
+  if (need_auto_state_lcd_update) {
+    need_auto_state_lcd_update = false;
+    updateLCDAutoState();
   }
   
   executeCommands();
@@ -124,27 +130,31 @@ bool sendControlsInfo(unsigned connection_id)
   char* reply;
   bool rok;
   
-  reply = sendMessage(connection_id, "DC_INFO=Tone", MAX_ATTEMPTS);
+  reply = sendMessage(connection_id, "DC_INFO={CODE:'tone',PREFIX:'TONE',PARAMS:{0:{NAME:'Led indication',SKIP:1,VALUE:'L',TYPE:'BOOL'},1:{NAME:'Frequency',TYPE:'UINT',DEFAULT:'500'},2:{NAME:'Period',TYPE:'UINT'}}}", MAX_ATTEMPTS);
   rok = replyIsOK(reply);
   if (!rok) return rok;
 
-  reply = sendMessage(connection_id, "DC_INFO=Led", MAX_ATTEMPTS);
+  reply = sendMessage(connection_id, "DC_INFO={CODE:'led',PREFIX:'LED_SET',PARAM:{0:{NAME:'Led state',TYPE:'BOOL'}}}", MAX_ATTEMPTS);
   rok = replyIsOK(reply);
   if (!rok) return rok;
 
-  reply = sendMessage(connection_id, "DC_INFO=State", MAX_ATTEMPTS);
+  reply = sendMessage(connection_id, "DC_INFO={CODE:'state',PREFIX:'STATES_REQUEST',PARAM:{0:{VALUE:1,SKIP:1,LISTEN:1}}}", MAX_ATTEMPTS);
   rok = replyIsOK(reply);
   if (!rok) return rok;
 
-  reply = sendMessage(connection_id, "DC_INFO=Reset", MAX_ATTEMPTS);
+  reply = sendMessage(connection_id, "DC_INFO={CODE:'reset',PREFIX:'SERV_RST',PARAM:{0:{VALUE:1,SKIP:1}}}", MAX_ATTEMPTS);
   rok = replyIsOK(reply);
   if (!rok) return rok;
 
-  reply = sendMessage(connection_id, "DC_INFO=Config", MAX_ATTEMPTS);
+  reply = sendMessage(connection_id, "DC_INFO={CODE:'config',PREFIX:'SERV_CONF',PARAM:{0:{VALUE:1,SKIP:1}}}", MAX_ATTEMPTS);
   rok = replyIsOK(reply);
   if (!rok) return rok;
 
-  reply = sendMessage(connection_id, "DC_INFO=LCD", MAX_ATTEMPTS);
+  reply = sendMessage(connection_id, "DC_INFO={CODE:'displaystate',PREFIX:'SET_DISPLAY_ST',PARAM:{0:{NAME:'Set display state',TYPE:'BOOL'}},BUTTONS:{NAME:'Set auto',PARAMSET:{0:'2'}}}", MAX_ATTEMPTS);
+  rok = replyIsOK(reply);
+  if (!rok) return rok;
+
+  reply = sendMessage(connection_id, "DC_INFO={CODE:'lcd',PREFIX:'SERV_LT',PARAM:{0:{NAME:'Display text',TYPE:'STRING'}},BUTTONS:{NAME:'Reset',PARAMSET:{0:''}}}", MAX_ATTEMPTS);
   rok = replyIsOK(reply);
   
   return rok;
@@ -233,9 +243,10 @@ void executeInputMessage(char *input_message)
         }
       }
     } else if ((param = getMessageParam(message, "SERV_LT=", true))) {
-      setLCDFixed(param);
-    } else if ((param = getMessageParam(message, "SERV_LR=1", true))) {
-      resetLCDFixed();
+      if (param[0]) setLCDFixed(param); else resetLCDFixed();
+    } else if ((param = getMessageParam(message, "SET_DISPLAY_ST=", true))) {
+      byte new_d_state = readIntFromString(param, 0);
+      if (new_d_state<2) setLCDState(new_d_state!=0); else setLCDAutoState();
     }
     delay (100);
   }
@@ -246,3 +257,7 @@ void executeCommands()
   executeInputMessage(NULL);
 }
 
+void ON_PresenceDetected()
+{
+  need_auto_state_lcd_update = true;
+}
