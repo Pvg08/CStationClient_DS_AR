@@ -130,31 +130,31 @@ bool sendControlsInfo(unsigned connection_id)
   char* reply;
   bool rok;
   
-  reply = sendMessage(connection_id, "DC_INFO={CODE:'tone',PREFIX:'TONE',PARAMS:{0:{NAME:'Led indication',SKIP:1,VALUE:'L',TYPE:'BOOL'},1:{NAME:'Frequency',TYPE:'UINT',DEFAULT:'500'},2:{NAME:'Period',TYPE:'UINT'}}}", MAX_ATTEMPTS);
+  reply = sendMessage(connection_id, "DC_INFO={'CODE':'tone','PREFIX':'TONE','PARAM':[{'NAME':'Led indication','SKIP':1,'VALUE':'L','TYPE':'BOOL'},{'NAME':'Frequency','TYPE':'UINT','DEFAULT':500},{'NAME':'Period','TYPE':'UINT'}],'BUTTONS':[{'NAME':'Reset','PARAMSET':['0']}]}", MAX_ATTEMPTS);
   rok = replyIsOK(reply);
   if (!rok) return rok;
 
-  reply = sendMessage(connection_id, "DC_INFO={CODE:'led',PREFIX:'LED_SET',PARAM:{0:{NAME:'Led state',TYPE:'BOOL'}}}", MAX_ATTEMPTS);
+  reply = sendMessage(connection_id, "DC_INFO={'CODE':'led','PREFIX':'LED_SET','PARAM':[{'NAME':'Led state','TYPE':'BOOL'}]}", MAX_ATTEMPTS);
   rok = replyIsOK(reply);
   if (!rok) return rok;
 
-  reply = sendMessage(connection_id, "DC_INFO={CODE:'state',PREFIX:'STATES_REQUEST',PARAM:{0:{VALUE:1,SKIP:1,LISTEN:1}}}", MAX_ATTEMPTS);
+  reply = sendMessage(connection_id, "DC_INFO={'CODE':'state','PREFIX':'STATES_REQUEST','LISTEN':1,'PARAM':[{'VALUE':1,'SKIP':1}]}", MAX_ATTEMPTS);
   rok = replyIsOK(reply);
   if (!rok) return rok;
 
-  reply = sendMessage(connection_id, "DC_INFO={CODE:'reset',PREFIX:'SERV_RST',PARAM:{0:{VALUE:1,SKIP:1}}}", MAX_ATTEMPTS);
+  reply = sendMessage(connection_id, "DC_INFO={'CODE':'reset','PREFIX':'SERV_RST','PARAM':[{'VALUE':1,'SKIP':1}]}", MAX_ATTEMPTS);
   rok = replyIsOK(reply);
   if (!rok) return rok;
 
-  reply = sendMessage(connection_id, "DC_INFO={CODE:'config',PREFIX:'SERV_CONF',PARAM:{0:{VALUE:1,SKIP:1}}}", MAX_ATTEMPTS);
+  reply = sendMessage(connection_id, "DC_INFO={'CODE':'config','PREFIX':'SERV_CONF','PARAM':[{'VALUE':1,'SKIP':1}]}", MAX_ATTEMPTS);
   rok = replyIsOK(reply);
   if (!rok) return rok;
 
-  reply = sendMessage(connection_id, "DC_INFO={CODE:'displaystate',PREFIX:'SET_DISPLAY_ST',PARAM:{0:{NAME:'Set display state',TYPE:'BOOL'}},BUTTONS:{NAME:'Set auto',PARAMSET:{0:'2'}}}", MAX_ATTEMPTS);
+  reply = sendMessage(connection_id, "DC_INFO={'CODE':'displaystate','PREFIX':'SET_DISPLAY_ST','PARAM':[{'NAME':'Display state','TYPE':'BOOL'}],'BUTTONS':[{'NAME':'Set auto','PARAMSET':['2']}]}", MAX_ATTEMPTS);
   rok = replyIsOK(reply);
   if (!rok) return rok;
 
-  reply = sendMessage(connection_id, "DC_INFO={CODE:'lcd',PREFIX:'SERV_LT',PARAM:{0:{NAME:'Display text',TYPE:'STRING'}},BUTTONS:{NAME:'Reset',PARAMSET:{0:''}}}", MAX_ATTEMPTS);
+  reply = sendMessage(connection_id, "DC_INFO={'CODE':'lcd','PREFIX':'SERV_LT','PARAM':[{'NAME':'Display text','TYPE':'STRING'}],'BUTTONS':[{'NAME':'Reset','PARAMSET':['']}]}", MAX_ATTEMPTS);
   rok = replyIsOK(reply);
   
   return rok;

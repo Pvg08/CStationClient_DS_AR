@@ -364,16 +364,19 @@ void StartConnection(bool reconnect)
       DEBUG_WRITELN("Send identification Number");
       setLCDText("Identification");
       reply = sendMessage(connection_id, "DS="+String(station_id), MAX_ATTEMPTS);
-      rok = replyIsOK(reply);
+      rok = rok && replyIsOK(reply);
       
       DEBUG_WRITELN("Send sensors info");
       setLCDLines("Sending sensors", "info");
-      rok = sendSensorsInfo(connection_id);
+      rok = rok && sendSensorsInfo(connection_id);
       
       DEBUG_WRITELN("Send controls info");
       setLCDLines("Sending controls", "info");
-      rok = sendControlsInfo(connection_id);
-      
+      rok = rok && sendControlsInfo(connection_id);
+
+      reply = sendMessage(connection_id, "DS_READY=1", 1);
+      rok = rok && replyIsOK(reply);
+
     } while (!rok);
     
     connected_to_server = true;

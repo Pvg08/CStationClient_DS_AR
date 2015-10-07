@@ -124,61 +124,61 @@ bool sendSensorsInfo(unsigned connection_id)
   char* reply;
   bool rok;
   
-  reply = sendMessage(connection_id, "DS_INFO=A:enum(off,on)[60]|Activity", MAX_ATTEMPTS);
+  reply = sendMessage(connection_id, "DS_INFO={'CODE':'A','NAME':'Activity','TIMEOUT':60,'TYPE':'ENUM','ENUMS':['off','on']}", MAX_ATTEMPTS);
   rok = replyIsOK(reply);
   if (!rok) return rok;
 
-  reply = sendMessage(connection_id, "DS_INFO=E:int(0..100000)[]|Errors", MAX_ATTEMPTS);
+  reply = sendMessage(connection_id, "DS_INFO={'CODE':'E','NAME':'Errors','TYPE':'INT','MIN':0,'MAX':100000}", MAX_ATTEMPTS);
   rok = replyIsOK(reply);
   if (!rok) return rok;
 
-  reply = sendMessage(connection_id, "DS_INFO=T:float(-100..100)[]C|Temperature", MAX_ATTEMPTS);
+  reply = sendMessage(connection_id, "DS_INFO={'CODE':'T','NAME':'Temperature','TYPE':'FLOAT','MIN':-100,'MAX':100,'EM':'°C'}", MAX_ATTEMPTS);
   rok = replyIsOK(reply);
   if (!rok) return rok;
   
-  reply = sendMessage(connection_id, "DS_INFO=P:float(500..1000)[]mm|Pressure", MAX_ATTEMPTS);
+  reply = sendMessage(connection_id, "DS_INFO={'CODE':'P','NAME':'Pressure','TYPE':'FLOAT','MIN':500,'MAX':1000,'EM':'mm'}", MAX_ATTEMPTS);
   rok = replyIsOK(reply);
   if (!rok) return rok;
 
   if (H_init) {
-    reply = sendMessage(connection_id, "DS_INFO=H:float(0..100)[]%|Humidity", MAX_ATTEMPTS);
+    reply = sendMessage(connection_id, "DS_INFO={'CODE':'H','NAME':'Humidity','TYPE':'FLOAT','MIN':0,'MAX':100,'EM':'%'}", MAX_ATTEMPTS);
     rok = replyIsOK(reply);
     if (!rok) return rok;
   }
   
-  reply = sendMessage(connection_id, "DS_INFO=L:float(0..200000)[]lux|Illuminance", MAX_ATTEMPTS);
+  reply = sendMessage(connection_id, "DS_INFO={'CODE':'L','NAME':'Illuminance','TYPE':'FLOAT','MIN':0,'MAX':200000,'EM':'lux'}", MAX_ATTEMPTS);
   rok = replyIsOK(reply);
   if (!rok) return rok;
   
-  reply = sendMessage(connection_id, "DS_INFO=R:enum(no,yes)[10]|Presence", MAX_ATTEMPTS);
+  reply = sendMessage(connection_id, "DS_INFO={'CODE':'R','NAME':'Presence','TIMEOUT':10,'TYPE':'ENUM','ENUMS':['no','yes']}", MAX_ATTEMPTS);
   rok = replyIsOK(reply);
   if (!rok) return rok;
 
   if (MXYZ_init) {
-    reply = sendMessage(connection_id, "DS_INFO=X:float(-10000..10000)[]deg|Magnetic field Vector X", MAX_ATTEMPTS);
+    reply = sendMessage(connection_id, "DS_INFO={'CODE':'Mx','NAME':'Magnetic field Vector X','TYPE':'FLOAT','MIN':-10000,'MAX':10000,'EM':'deg'}", MAX_ATTEMPTS);
     rok = replyIsOK(reply);
     if (!rok) return rok;
-    reply = sendMessage(connection_id, "DS_INFO=Y:float(-10000..10000)[]deg|Magnetic field Vector Y", MAX_ATTEMPTS);
+    reply = sendMessage(connection_id, "DS_INFO={'CODE':'My','NAME':'Magnetic field Vector Y','TYPE':'FLOAT','MIN':-10000,'MAX':10000,'EM':'deg'}", MAX_ATTEMPTS);
     rok = replyIsOK(reply);
     if (!rok) return rok;
-    reply = sendMessage(connection_id, "DS_INFO=Z:float(-10000..10000)[]deg|Magnetic field Vector Z", MAX_ATTEMPTS);
+    reply = sendMessage(connection_id, "DS_INFO={'CODE':'Mz','NAME':'Magnetic field Vector Z','TYPE':'FLOAT','MIN':-10000,'MAX':10000,'EM':'deg'}", MAX_ATTEMPTS);
     rok = replyIsOK(reply);
     if (!rok) return rok;
   }
 
-  reply = sendMessage(connection_id, "DS_INFO=N:enum(no,yes)[5]|Noise", MAX_ATTEMPTS);
+  reply = sendMessage(connection_id, "DS_INFO={'CODE':'N','NAME':'Noise','TIMEOUT':5,'TYPE':'ENUM','ENUMS':['no','yes']}", MAX_ATTEMPTS);
   rok = replyIsOK(reply);
   if (!rok) return rok;
 
-  reply = sendMessage(connection_id, "DS_INFO=O:enum(no,yes)[]|Outer signal", MAX_ATTEMPTS);
+  reply = sendMessage(connection_id, "DS_INFO={'CODE':'O','NAME':'Outer signal','TYPE':'ENUM','ENUMS':['no','yes']}", MAX_ATTEMPTS);
   rok = replyIsOK(reply);
   if (!rok) return rok;
 
-  reply = sendMessage(connection_id, "DS_INFO=B:enum(no,yes)[5]|Signal button", MAX_ATTEMPTS);
+  reply = sendMessage(connection_id, "DS_INFO={'CODE':'B','NAME':'Signal button','TIMEOUT':5,'TYPE':'ENUM','ENUMS':['no','yes']}", MAX_ATTEMPTS);
   rok = replyIsOK(reply);
   if (!rok) return rok;
 
-  reply = sendMessage(connection_id, "DS_V={A(on)}", MAX_ATTEMPTS);
+  reply = sendMessage(connection_id, "DS_V={'A':'on'}", MAX_ATTEMPTS);
   rok = replyIsOK(reply);
 
   last_sending_millis = 0;
@@ -225,12 +225,12 @@ bool sensorsSending()
     char status;
     double T,P;
 
-    String send_str = "A(on)";
+    String send_str = "'A':'on'";
     String lcd1 = "";
     String lcd2 = "";
     
-    if (send_str.length()>0) send_str = send_str + ";";
-    send_str = send_str + "E(" + String(errors_count) + ")";
+    if (send_str.length()>0) send_str = send_str + ",";
+    send_str = send_str + "'E':" + String(errors_count);
 
     status = pressure.startTemperature();
     if (status != 0)
@@ -239,9 +239,9 @@ bool sensorsSending()
       status = pressure.getTemperature(T);
       if (status != 0)
       {
-        if (send_str.length()>0) send_str = send_str + ";";
-        send_str = send_str + "T(" + String(T, 2) + ")";
-        lcd1 = "T="+String(T, 1)+"C  ";
+        if (send_str.length()>0) send_str = send_str + ",";
+        send_str = send_str + "'T':" + String(T, 2);
+        lcd1 = "T="+String(T, 1)+"\337C ";
         
         status = pressure.startPressure(3);
         if (status != 0)
@@ -251,8 +251,8 @@ bool sensorsSending()
           if (status != 0)
           {
             P = P*0.750063755;
-            if (send_str.length()>0) send_str = send_str + ";";
-            send_str = send_str + "P(" + String(P, 3) + ")";
+            if (send_str.length()>0) send_str = send_str + ",";
+            send_str = send_str + "'P':" + String(P, 3);
             lcd2 = "P="+String(P, 2)+"mm";
           }
         }
@@ -264,8 +264,8 @@ bool sensorsSending()
       if (!isnan(H)) {
         setH = true;
         oldH = H;
-        if (send_str.length()>0) send_str = send_str + ";";
-        send_str = send_str + "H(" + String(H, 1) + ")";
+        if (send_str.length()>0) send_str = send_str + ",";
+        send_str = send_str + "'H':" + String(H, 1);
         lcd1 = lcd1 + "H="+String(H, H>99.9 ? 0 : 1)+"%";
       } else if (setH) {
         lcd1 = lcd1 + "H="+String(oldH, oldH>99.9 ? 0 : 1)+"%";
@@ -273,21 +273,21 @@ bool sensorsSending()
     }
 
     uint16_t lux = lightMeter.readLightLevel();
-    if (send_str.length()>0) send_str = send_str + ";";
-    send_str = send_str + "L(" + String(lux) + ")";
+    if (send_str.length()>0) send_str = send_str + ",";
+    send_str = send_str + "'L':" + String(lux);
 
-    if (send_str.length()>0) send_str = send_str + ";";
-    send_str = send_str + "R(" + (digitalRead(HC_PIN) == HIGH ? "yes" : "no") + ")";
+    if (send_str.length()>0) send_str = send_str + ",";
+    send_str = send_str + "'R':'" + (digitalRead(HC_PIN) == HIGH ? "yes" : "no") + "'";
 
     if (ns_state && !ns_info_sended) {
-      if (send_str.length()>0) send_str = send_str + ";";
-      send_str = send_str + "N(yes)";
+      if (send_str.length()>0) send_str = send_str + ",";
+      send_str = send_str + "'N':'yes'";
     }
 
     if (MXYZ_init) {
       Vector norm = magnetic_meter.readNormalize();
-      if (send_str.length()>0) send_str = send_str + ";";
-      send_str = send_str + "X(" + String(norm.XAxis, 0) + ");Y(" + String(norm.YAxis, 0) + ");Z(" + String(norm.ZAxis, 0) + ")";
+      if (send_str.length()>0) send_str = send_str + ",";
+      send_str = send_str + "'Mx':" + String(norm.XAxis, 0) + ",'My':" + String(norm.YAxis, 0) + ",'Mz':" + String(norm.ZAxis, 0);
     }
 
     setLCDLines(lcd1.c_str(), lcd2.c_str());
@@ -311,23 +311,23 @@ bool sensorsSending()
     
     delay(50);
     
-    String send_str = "A(on)";
+    String send_str = "'A':'on'";
     
     if (hc_state && !hc_info_sended) {
-      if (send_str.length()>0) send_str = send_str + ";";
-      send_str = send_str + "R(yes)";
+      if (send_str.length()>0) send_str = send_str + ",";
+      send_str = send_str + "'R':'yes'";
     }
     if (ns_state && !ns_info_sended) {
-      if (send_str.length()>0) send_str = send_str + ";";
-      send_str = send_str + "N(yes)";
+      if (send_str.length()>0) send_str = send_str + ",";
+      send_str = send_str + "'N':'yes'";
     }
     if (signal_btn_pressed && !signal_btn_sended) {
-      if (send_str.length()>0) send_str = send_str + ";";
-      send_str = send_str + "B(yes)";
+      if (send_str.length()>0) send_str = send_str + ",";
+      send_str = send_str + "'B':'yes'";
     }
     if (!sensor_outer_signal_sended) {
-      if (send_str.length()>0) send_str = send_str + ";";
-      send_str = send_str + "O("+(sensor_outer_signal ? "yes" : "no")+")";
+      if (send_str.length()>0) send_str = send_str + ",";
+      send_str = send_str + "'O':'"+(sensor_outer_signal ? "yes" : "no")+"'";
     }
     
     char* reply = sendMessage(connection_id, "DS_V={"+send_str+"}", 1);
