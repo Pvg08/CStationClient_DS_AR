@@ -49,16 +49,15 @@ char temp[5];
 
 void initESP() {
   espSerial.begin(BAUD_RATE);
-  pinMode(CONNECTION_ESP_PIN, OUTPUT);
 
   wifi_ssid[0] = 0;
   wifi_passw[0] = 0;
   server_ip_addr[0] = 0;
-  station_id = EEPROM.read(EEPROM_START_ADDR);
+  station_id = EEPROM_Helper::readByte(EEPROM_START_ADDR);
   if (station_id && station_id<255) {
-    readStringFromEEPROM(EEPROM_START_ADDR+1, wifi_ssid, WIFI_SSID_MAXLEN);
-    readStringFromEEPROM(EEPROM_START_ADDR+WIFI_SSID_MAXLEN+2, wifi_passw, WIFI_PASSWORD_MAXLEN);
-    readStringFromEEPROM(EEPROM_START_ADDR+WIFI_SSID_MAXLEN+WIFI_PASSWORD_MAXLEN+3, server_ip_addr, WIFI_SERVER_ADDRESS_MAXLEN);
+    EEPROM_Helper::readStringFromEEPROM(EEPROM_START_ADDR+1, wifi_ssid, WIFI_SSID_MAXLEN);
+    EEPROM_Helper::readStringFromEEPROM(EEPROM_START_ADDR+WIFI_SSID_MAXLEN+2, wifi_passw, WIFI_PASSWORD_MAXLEN);
+    EEPROM_Helper::readStringFromEEPROM(EEPROM_START_ADDR+WIFI_SSID_MAXLEN+WIFI_PASSWORD_MAXLEN+3, server_ip_addr, WIFI_SERVER_ADDRESS_MAXLEN);
   }
 }
 
@@ -68,7 +67,7 @@ void StartConfiguringMode()
   byte attempts = 0;
   char* reply = NULL;
 
-  digitalWrite(CONNECTION_ESP_PIN, HIGH);
+  IndicationController::ConfigState(1);
 
   if (connected_to_wifi && connected_to_server) closeConnection(CONNECTIONS_ALL);
   connected_to_wifi = false;
@@ -87,7 +86,7 @@ void StartConfiguringMode()
       do {
         espSerial.print("AT+RST\r\n");
         reply = getReply( 4000, false );
-        rok = replyIsOK(reply);
+        rok = StringHelper::replyIsOK(reply);
         attempts++;
       } while (!rok && attempts<MAX_ATTEMPTS);
       if (!rok) continue;
@@ -98,7 +97,7 @@ void StartConfiguringMode()
       do {
         espSerial.print("AT+CWMODE=3\r\n");
         reply = getReply( 1500, true );
-        rok = replyIsOK(reply);
+        rok = StringHelper::replyIsOK(reply);
         attempts++;
       } while (!rok && attempts<MAX_ATTEMPTS);
       if (!rok) continue;
@@ -117,7 +116,7 @@ void StartConfiguringMode()
         espSerial.print(HOST_WIFI_ECN);
         espSerial.print("\r\n");
         reply = getReply( 2000, true );
-        rok = replyIsOK(reply);
+        rok = StringHelper::replyIsOK(reply);
         attempts++;
       } while (!rok && attempts<MAX_ATTEMPTS);
       if (!rok) continue;
@@ -139,7 +138,7 @@ void StartConfiguringMode()
       do {
         espSerial.print("AT+CIFSR\r\n");
         reply = getReply( 1000, true );
-        rok = replyIsOK(reply);
+        rok = StringHelper::replyIsOK(reply);
         attempts++;
       } while (!rok && attempts<MAX_ATTEMPTS);
       if (!rok || !reply) continue;
@@ -168,7 +167,7 @@ void StartConfiguringMode()
       do {
         espSerial.print("AT+CIPMUX=1\r\n");
         reply = getReply( 1500, true );
-        rok = replyIsOK(reply);
+        rok = StringHelper::replyIsOK(reply);
         attempts++;
       } while (!rok && attempts<MAX_ATTEMPTS);
       if (!rok) continue;
@@ -192,6 +191,8 @@ void StartConfiguringMode()
 
     } while (!rok);
 
+    IndicationController::ConfigState(2);
+
     in_configuration_mode = true;
     reset_btn_pressed = false;
     while (!reset_btn_pressed) {
@@ -200,27 +201,27 @@ void StartConfiguringMode()
       char* param;
       if (message) {
        
-        if ((param = getMessageParam(message, "DS_SETUP:\r\n", false))) {
+        if ((param = StringHelper::getMessageParam(message, "DS_SETUP:\r\n", false))) {
           unsigned line_pos = 0;
           
-          rok = readLineToStr(param, wifi_ssid, WIFI_SSID_MAXLEN, line_pos, &line_pos);
-          writeStringToEEPROM(EEPROM_START_ADDR+1, wifi_ssid, WIFI_SSID_MAXLEN);
+          rok = StringHelper::readLineToStr(param, wifi_ssid, WIFI_SSID_MAXLEN, line_pos, &line_pos);
+          EEPROM_Helper::writeStringToEEPROM(EEPROM_START_ADDR+1, wifi_ssid, WIFI_SSID_MAXLEN);
           DEBUG_WRITE("SSID written to EEPROM:"); DEBUG_WRITELN(wifi_ssid);
           
-          rok = readLineToStr(param, wifi_passw, WIFI_PASSWORD_MAXLEN, line_pos, &line_pos);
-          writeStringToEEPROM(EEPROM_START_ADDR+WIFI_SSID_MAXLEN+2, wifi_passw, WIFI_PASSWORD_MAXLEN);
+          rok = StringHelper::readLineToStr(param, wifi_passw, WIFI_PASSWORD_MAXLEN, line_pos, &line_pos);
+          EEPROM_Helper::writeStringToEEPROM(EEPROM_START_ADDR+WIFI_SSID_MAXLEN+2, wifi_passw, WIFI_PASSWORD_MAXLEN);
           DEBUG_WRITE("PASSW written to EEPROM:"); DEBUG_WRITELN(wifi_passw);
           
-          rok = readLineToStr(param, server_ip_addr, WIFI_SERVER_ADDRESS_MAXLEN, line_pos, &line_pos);
-          writeStringToEEPROM(EEPROM_START_ADDR+WIFI_SSID_MAXLEN+WIFI_PASSWORD_MAXLEN+3, server_ip_addr, WIFI_SERVER_ADDRESS_MAXLEN);
+          rok = StringHelper::readLineToStr(param, server_ip_addr, WIFI_SERVER_ADDRESS_MAXLEN, line_pos, &line_pos);
+          EEPROM_Helper::writeStringToEEPROM(EEPROM_START_ADDR+WIFI_SSID_MAXLEN+WIFI_PASSWORD_MAXLEN+3, server_ip_addr, WIFI_SERVER_ADDRESS_MAXLEN);
           DEBUG_WRITE("Server address written to EEPROM:"); DEBUG_WRITELN(server_ip_addr);
           
-          station_id = readIntFromString(param, line_pos);
-          EEPROM.write(EEPROM_START_ADDR, station_id);
+          station_id = StringHelper::StringHelper::readIntFromString(param, line_pos);
+          EEPROM_Helper::writeByte(EEPROM_START_ADDR, station_id);
           DEBUG_WRITE("Station ID written to EEPROM:"); DEBUG_WRITELN(station_id);
           break;
           
-        } else if ((param = getMessageParam(message, "SERV_RST=1", true))) {
+        } else if ((param = StringHelper::getMessageParam(message, "SERV_RST=1", true))) {
           break;
         }
         
@@ -231,7 +232,7 @@ void StartConfiguringMode()
       delay(50);
     }
     
-    digitalWrite(CONNECTION_ESP_PIN, LOW);
+    IndicationController::ConfigState(0);
 }
 
 void StartConnection(bool reconnect) 
@@ -240,7 +241,7 @@ void StartConnection(bool reconnect)
   byte attempts = 0;
   char* reply;
   
-  digitalWrite(CONNECTION_ESP_PIN, HIGH);
+  IndicationController::ConnectState(1);
   
   if (connected_to_wifi && connected_to_server) closeConnection(CONNECTIONS_ALL);
   in_configuration_mode = false;
@@ -267,7 +268,7 @@ void StartConnection(bool reconnect)
       do {
         espSerial.print("AT+RST\r\n");
         reply = getReply( 4000, false );
-        rok = replyIsOK(reply);
+        rok = StringHelper::replyIsOK(reply);
         attempts++;
       } while (!rok && attempts<MAX_ATTEMPTS);
       if (!rok) continue;
@@ -278,7 +279,7 @@ void StartConnection(bool reconnect)
       do {
         espSerial.print("AT+CWMODE=1\r\n");
         reply = getReply( 1500, true );
-        rok = replyIsOK(reply);
+        rok = StringHelper::replyIsOK(reply);
         attempts++;
       } while (!rok && attempts<MAX_ATTEMPTS);
       if (!rok) continue;
@@ -293,7 +294,7 @@ void StartConnection(bool reconnect)
         espSerial.print(wifi_passw);
         espSerial.print("\"\r\n");
         reply = getReply( 6000, true );
-        rok = replyIsOK(reply);
+        rok = StringHelper::replyIsOK(reply);
         attempts++;
       } while (!rok && attempts<MAX_ATTEMPTS);
       if (!rok) continue;
@@ -304,7 +305,7 @@ void StartConnection(bool reconnect)
       do {
         espSerial.print("AT+CIFSR\r\n");
         reply = getReply( 1000, true );
-        rok = replyIsOK(reply);
+        rok = StringHelper::replyIsOK(reply);
         attempts++;
       } while (!rok && attempts<MAX_ATTEMPTS);
       if (!rok) continue;
@@ -315,7 +316,7 @@ void StartConnection(bool reconnect)
       do {
         espSerial.print("AT+CIPMUX=1\r\n");
         reply = getReply( 750, true );
-        rok = replyIsOK(reply);
+        rok = StringHelper::replyIsOK(reply);
         attempts++;
       } while (!rok && attempts<MAX_ATTEMPTS);
 
@@ -326,6 +327,8 @@ void StartConnection(bool reconnect)
   }
   if (reconnect && connected_to_wifi && !connected_to_server) 
   {
+    IndicationController::ConnectState(2);
+    
     do {
       updateLCDAutoState();
       
@@ -343,7 +346,7 @@ void StartConnection(bool reconnect)
         espSerial.print(SERVER_PORT);
         espSerial.print("\r\n");
         reply = getReply( 2000, true );
-        rok = replyIsOK(reply);
+        rok = StringHelper::replyIsOK(reply);
         attempts++;
       } while (!rok && attempts<MAX_ATTEMPTS);
       if (!rok) {
@@ -364,7 +367,7 @@ void StartConnection(bool reconnect)
       DEBUG_WRITELN("Send identification Number");
       setLCDText("Identification");
       reply = sendMessage(connection_id, "DS="+String(station_id), MAX_ATTEMPTS);
-      rok = rok && replyIsOK(reply);
+      rok = rok && StringHelper::replyIsOK(reply);
       
       DEBUG_WRITELN("Send sensors info");
       setLCDLines("Sending sensors", "info");
@@ -375,7 +378,7 @@ void StartConnection(bool reconnect)
       rok = rok && sendControlsInfo(connection_id);
 
       reply = sendMessage(connection_id, "DS_READY=1", 1);
-      rok = rok && replyIsOK(reply);
+      rok = rok && StringHelper::replyIsOK(reply);
 
     } while (!rok);
     
@@ -384,7 +387,7 @@ void StartConnection(bool reconnect)
   
   DEBUG_WRITELN("Connected successfully!");
   setLCDText("Connected!");
-  digitalWrite(CONNECTION_ESP_PIN, LOW);
+  IndicationController::ConnectState(0);
 }
 
 bool startServer(unsigned connection, unsigned port)
@@ -401,7 +404,7 @@ bool startServer(unsigned connection, unsigned port)
     espSerial.print(port);
     espSerial.print("\r\n");
     reply = getReply( 750, true );
-    rok = replyIsOK(reply);
+    rok = StringHelper::replyIsOK(reply);
     attempts++;
   } while (!rok && attempts<MAX_ATTEMPTS);
   if(!rok) errors_count++;
@@ -419,7 +422,7 @@ bool closeConnection(unsigned connection) {
     espSerial.print(connection);
     espSerial.print("\r\n");
     reply = getReply( 800, true );
-    rok = replyIsOK(reply);
+    rok = StringHelper::replyIsOK(reply);
     attempts++;
   } while (!rok && attempts<MAX_ATTEMPTS);
   if(!rok) errors_count++;
@@ -451,7 +454,7 @@ char* sendMessage(unsigned connection_id, String message, unsigned max_attempts)
     espSerial.print(spart.length(), DEC);
     espSerial.print("\r\n");
     reply = getReply( 5000, true );
-    if (!replyIsOK(reply)) {
+    if (!StringHelper::replyIsOK(reply)) {
       errors_count++;
       if (max_attempts && attempts<max_attempts) {
         attempts++;
@@ -463,7 +466,7 @@ char* sendMessage(unsigned connection_id, String message, unsigned max_attempts)
     espSerial.print(spart.c_str());
     espSerial.print("\r\n");
     reply = getReply( 5000, true );
-    if (!replyIsOK(reply)) {
+    if (!StringHelper::replyIsOK(reply)) {
       errors_count++;
       if (max_attempts && attempts<max_attempts) {
         attempts++;
@@ -535,7 +538,7 @@ char* readTCPMessage(unsigned int wait, unsigned* tcp_connection_id, bool from_r
           if (!start && message[i] == ',') {
             start = true;
           } else if (start && message[i]>='0' && message[i]<='9') {
-            *tcp_connection_id = readIntFromString(message, i);
+            *tcp_connection_id = StringHelper::readIntFromString(message, i);
             done = true;
           }
         }

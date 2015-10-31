@@ -8,6 +8,7 @@
 #define LCD_AUTO_TURNOFF_MSTIME 100000
 
 LiquidCrystal_I2C lcd(LCD_I2C_ADDR, 16, 2);
+
 bool fixed_text = false;
 bool lcd_auto_state = true;
 bool lcd_ison = true;

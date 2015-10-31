@@ -15,7 +15,6 @@
 #define HC_PIN 18
 #define HC_INTERRUPT 5
 #define HC_INTERRUPT_MODE CHANGE
-#define HC_SIGNAL_PIN 24
 
 #define NS_PIN 19
 #define NS_INTERRUPT 4
@@ -24,8 +23,6 @@
 #define SENSOR_OUT_PIN 3
 #define SENSOR_OUT_INTERRUPT 1
 #define SENSOR_OUT_INTERRUPT_MODE CHANGE
-
-#define ACTION_SIGNAL_PIN 26
 
 volatile unsigned long int last_sending_millis, last_reset_millis;
 
@@ -39,8 +36,6 @@ float oldH;
 bool H_init = false;
 bool MXYZ_init = false;
 
-bool action_led = false;
-
 volatile bool hc_info_sended = false;
 volatile bool hc_state = false;
 volatile bool ns_info_sended = false;
@@ -48,24 +43,14 @@ volatile bool ns_state = false;
 volatile bool sensor_outer_signal = false;
 volatile bool sensor_outer_signal_sended = false;
 
-void SensorsActionStarted() {
-  digitalWrite(ACTION_SIGNAL_PIN, HIGH);
-  action_led = true;
-}
-void SensorsActionStopped() {
-  digitalWrite(ACTION_SIGNAL_PIN, LOW);
-  action_led = false;
-}
-
 void HC_State_Changed() 
 {
   hc_state = digitalRead(HC_PIN) == HIGH;
   if (hc_state) {
     hc_info_sended = false;
-    SensorsActionStarted();
     ON_PresenceDetected();
+    IndicationController::PresenceState(hc_state);
   }
-  digitalWrite(HC_SIGNAL_PIN, hc_state ? HIGH : LOW);
 }
 
 void NS_State_Rising()
@@ -73,8 +58,8 @@ void NS_State_Rising()
   if (!tone_frequency || (tone_periodic && tone_state)) {
     ns_state = true;
     ns_info_sended = false;
-    SensorsActionStarted();
     ON_PresenceDetected();
+    IndicationController::PresenceState(ns_state);
   }
 }
 
@@ -82,7 +67,7 @@ void SensorOuter_State_Changed()
 {
   sensor_outer_signal = digitalRead(SENSOR_OUT_PIN) == HIGH;
   sensor_outer_signal_sended = false;
-  SensorsActionStarted();
+  IndicationController::OuterState(1);
 }
 
 void initSensors() 
@@ -90,8 +75,6 @@ void initSensors()
   pinMode(HC_PIN, INPUT);
   pinMode(NS_PIN, INPUT);
   pinMode(SENSOR_OUT_PIN, INPUT);
-  pinMode(ACTION_SIGNAL_PIN, OUTPUT);
-  pinMode(HC_SIGNAL_PIN, OUTPUT);
   H_init = !!pressure.begin();
   if (!H_init) 
   {
@@ -125,61 +108,61 @@ bool sendSensorsInfo(unsigned connection_id)
   bool rok;
   
   reply = sendMessage(connection_id, "DS_INFO={'CODE':'A','NAME':'Activity','TIMEOUT':60,'TYPE':'ENUM','ENUMS':['off','on']}", MAX_ATTEMPTS);
-  rok = replyIsOK(reply);
+  rok = StringHelper::replyIsOK(reply);
   if (!rok) return rok;
 
   reply = sendMessage(connection_id, "DS_INFO={'CODE':'E','NAME':'Errors','TYPE':'INT','MIN':0,'MAX':100000}", MAX_ATTEMPTS);
-  rok = replyIsOK(reply);
+  rok = StringHelper::replyIsOK(reply);
   if (!rok) return rok;
 
   reply = sendMessage(connection_id, "DS_INFO={'CODE':'T','NAME':'Temperature','TYPE':'FLOAT','MIN':-100,'MAX':100,'EM':'°C'}", MAX_ATTEMPTS);
-  rok = replyIsOK(reply);
+  rok = StringHelper::replyIsOK(reply);
   if (!rok) return rok;
   
   reply = sendMessage(connection_id, "DS_INFO={'CODE':'P','NAME':'Pressure','TYPE':'FLOAT','MIN':500,'MAX':1000,'EM':'mm'}", MAX_ATTEMPTS);
-  rok = replyIsOK(reply);
+  rok = StringHelper::replyIsOK(reply);
   if (!rok) return rok;
 
   if (H_init) {
     reply = sendMessage(connection_id, "DS_INFO={'CODE':'H','NAME':'Humidity','TYPE':'FLOAT','MIN':0,'MAX':100,'EM':'%'}", MAX_ATTEMPTS);
-    rok = replyIsOK(reply);
+    rok = StringHelper::replyIsOK(reply);
     if (!rok) return rok;
   }
   
   reply = sendMessage(connection_id, "DS_INFO={'CODE':'L','NAME':'Illuminance','TYPE':'FLOAT','MIN':0,'MAX':200000,'EM':'lux'}", MAX_ATTEMPTS);
-  rok = replyIsOK(reply);
+  rok = StringHelper::replyIsOK(reply);
   if (!rok) return rok;
   
   reply = sendMessage(connection_id, "DS_INFO={'CODE':'R','NAME':'Presence','TIMEOUT':10,'TYPE':'ENUM','ENUMS':['no','yes']}", MAX_ATTEMPTS);
-  rok = replyIsOK(reply);
+  rok = StringHelper::replyIsOK(reply);
   if (!rok) return rok;
 
   if (MXYZ_init) {
     reply = sendMessage(connection_id, "DS_INFO={'CODE':'Mx','NAME':'Magnetic field Vector X','TYPE':'FLOAT','MIN':-10000,'MAX':10000,'EM':'deg'}", MAX_ATTEMPTS);
-    rok = replyIsOK(reply);
+    rok = StringHelper::replyIsOK(reply);
     if (!rok) return rok;
     reply = sendMessage(connection_id, "DS_INFO={'CODE':'My','NAME':'Magnetic field Vector Y','TYPE':'FLOAT','MIN':-10000,'MAX':10000,'EM':'deg'}", MAX_ATTEMPTS);
-    rok = replyIsOK(reply);
+    rok = StringHelper::replyIsOK(reply);
     if (!rok) return rok;
     reply = sendMessage(connection_id, "DS_INFO={'CODE':'Mz','NAME':'Magnetic field Vector Z','TYPE':'FLOAT','MIN':-10000,'MAX':10000,'EM':'deg'}", MAX_ATTEMPTS);
-    rok = replyIsOK(reply);
+    rok = StringHelper::replyIsOK(reply);
     if (!rok) return rok;
   }
 
   reply = sendMessage(connection_id, "DS_INFO={'CODE':'N','NAME':'Noise','TIMEOUT':5,'TYPE':'ENUM','ENUMS':['no','yes']}", MAX_ATTEMPTS);
-  rok = replyIsOK(reply);
+  rok = StringHelper::replyIsOK(reply);
   if (!rok) return rok;
 
   reply = sendMessage(connection_id, "DS_INFO={'CODE':'O','NAME':'Outer signal','TYPE':'ENUM','ENUMS':['no','yes']}", MAX_ATTEMPTS);
-  rok = replyIsOK(reply);
+  rok = StringHelper::replyIsOK(reply);
   if (!rok) return rok;
 
   reply = sendMessage(connection_id, "DS_INFO={'CODE':'B','NAME':'Signal button','TIMEOUT':5,'TYPE':'ENUM','ENUMS':['no','yes']}", MAX_ATTEMPTS);
-  rok = replyIsOK(reply);
+  rok = StringHelper::replyIsOK(reply);
   if (!rok) return rok;
 
   reply = sendMessage(connection_id, "DS_V={'A':'on'}", MAX_ATTEMPTS);
-  rok = replyIsOK(reply);
+  rok = StringHelper::replyIsOK(reply);
 
   last_sending_millis = 0;
 
@@ -189,7 +172,7 @@ bool sendSensorsInfo(unsigned connection_id)
 bool sensorsSending() 
 {
   if ((hc_state && !hc_info_sended) || (ns_state && !ns_info_sended) || !sensor_outer_signal_sended || (signal_btn_pressed && !signal_btn_sended)) {
-    SensorsActionStarted();
+    IndicationController::SensorsSendingSignalState(1);
   }
   
   bool result = false;
@@ -222,6 +205,8 @@ bool sensorsSending()
 
   if (!last_sending_millis || millis_sum_delay > SENDING_INTERVAL) 
   {
+    IndicationController::SensorsSendingState(1);
+    
     char status;
     double T,P;
 
@@ -299,13 +284,15 @@ bool sensorsSending()
     }
     
     if (!hc_info_sended || !ns_info_sended) {
-      SensorsActionStopped();
+      IndicationController::SensorsSendingSignalState(0);
     }
     
     hc_info_sended = true;
     ns_info_sended = true;
 
     last_sending_millis = millis();
+
+    IndicationController::SensorsSendingState(0);
 
   } else if ((hc_state && !hc_info_sended) || (ns_state && !ns_info_sended) || !sensor_outer_signal_sended || (signal_btn_pressed && !signal_btn_sended)) {
     
@@ -331,16 +318,15 @@ bool sensorsSending()
     }
     
     char* reply = sendMessage(connection_id, "DS_V={"+send_str+"}", 1);
-    bool info_sended = replyIsOK(reply);
+    bool info_sended = StringHelper::replyIsOK(reply);
 
     if (hc_state && !hc_info_sended) hc_info_sended = info_sended;
     if (ns_state && !ns_info_sended) ns_info_sended = info_sended;
     if (signal_btn_pressed && !signal_btn_sended) signal_btn_sended = info_sended;
     if (!sensor_outer_signal_sended) sensor_outer_signal_sended = info_sended;
-    delay(400);
-  }
 
-  if (action_led) SensorsActionStopped();
+    IndicationController::SensorsSendingSignalState(0);
+  }
 
   return result;
 }
