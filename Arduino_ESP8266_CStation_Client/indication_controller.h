@@ -5,82 +5,103 @@
 
 class IndicationController 
 {
+  private:
+    bool led_blue_state;
+    bool led_yell_state;
+    bool led_red_state;
+
   public:
+    static IndicationController *_self_controller;
 
-    static bool led_blue_state;
-    static bool led_yell_state;
-    static bool led_red_state;
-
-    static void setRed(bool state)
-    {
-      IndicationController::led_red_state = state;
-      digitalWrite(LED_RED_PIN, state ? HIGH : LOW);
+    static IndicationController* Instance() {
+      if(!_self_controller)
+      {
+          _self_controller = new IndicationController();
+      }
+      return _self_controller;
     }
-    static void setYellow(bool state)
-    {
-      IndicationController::led_yell_state = state;
-      digitalWrite(LED_YELLOW_PIN, state ? HIGH : LOW);
-    }
-    static void setBlue(bool state)
-    {
-      IndicationController::led_blue_state = state;
-      digitalWrite(LED_BLUE_PIN, state ? HIGH : LOW);
+    static bool DeleteInstance() {
+      if(_self_controller)
+      {
+          delete _self_controller;
+          _self_controller = NULL;
+          return true;
+      }
+      return false;
     }
 
-    static void Init()
+    IndicationController() 
     {
       pinMode(LED_BLUE_PIN, OUTPUT);
       pinMode(LED_YELLOW_PIN, OUTPUT);
       pinMode(LED_RED_PIN, OUTPUT);
-      IndicationController::setRed(false);
-      IndicationController::setYellow(false);
-      IndicationController::setBlue(false);
+      setRed(false);
+      setYellow(false);
+      setBlue(false);
     }
 
-    static void ConfigState(byte state) {
-      IndicationController::setRed(state>0);
-      IndicationController::setYellow(state>1);
-      IndicationController::setBlue(state>1);
+    void setRed(bool state)
+    {
+      led_red_state = state;
+      digitalWrite(LED_RED_PIN, state ? HIGH : LOW);
+    }
+    void setYellow(bool state)
+    {
+      led_yell_state = state;
+      digitalWrite(LED_YELLOW_PIN, state ? HIGH : LOW);
+    }
+    void setBlue(bool state)
+    {
+      led_blue_state = state;
+      digitalWrite(LED_BLUE_PIN, state ? HIGH : LOW);
     }
 
-    static void ConnectState(byte state) {
-      IndicationController::setRed(state>0);
-      IndicationController::setYellow(state>1);
-      IndicationController::setBlue(false);
+    bool getProgLedState() 
+    {
+      return led_blue_state;
     }
 
-    static void SensorsSendingState(byte state) {
-      if (!state && IndicationController::led_red_state) {
+    void ConfigState(byte state) {
+      setRed(state>0);
+      setYellow(state>1);
+      setBlue(state>1);
+    }
+
+    void ConnectState(byte state) {
+      setRed(state>0);
+      setYellow(state>1);
+      setBlue(false);
+    }
+
+    void SensorsSendingState(byte state) {
+      if (!state && led_red_state) {
         delay(200);
       }
-      IndicationController::setRed(state>0);
-      if (!state && IndicationController::led_yell_state) {
-        IndicationController::setYellow(false);
+      if(led_red_state || !led_yell_state) setRed(state>0);
+      if (!state && led_yell_state) {
+        setYellow(false);
       }
     }
 
-    static void SensorsSendingSignalState(byte state) {
-      IndicationController::SensorsSendingState(state);
+    void SensorsSendingSignalState(byte state) {
+      SensorsSendingState(state);
     }
 
-    static void PresenceState(byte state) {
-      if (!IndicationController::led_red_state) IndicationController::setYellow(state>0);
+    void PresenceState(byte state) {
+      if (!led_red_state) setYellow(state>0);
     }
 
-    static void OuterState(byte state) {
-      if (!IndicationController::led_red_state) IndicationController::setYellow(state>0);
+    void OuterState(byte state) {
+      if (!led_red_state) setYellow(state>0);
     }
 
-    static void ToneState(byte state) {
-      IndicationController::setBlue(state>0);
+    void ToneState(byte state) {
+      setBlue(state>0);
     }
 
-    static void SetProgLedState(byte state) {
-      IndicationController::setBlue(state>0);
+    void SetProgLedState(byte state) {
+      setBlue(state>0);
     }
 };
 
-bool IndicationController::led_red_state = false;
-bool IndicationController::led_yell_state = false;
-bool IndicationController::led_blue_state = false;
-
+IndicationController *IndicationController::_self_controller = NULL;

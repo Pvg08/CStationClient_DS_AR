@@ -67,7 +67,7 @@ void StartConfiguringMode()
   byte attempts = 0;
   char* reply = NULL;
 
-  IndicationController::ConfigState(1);
+  ind_controller->ConfigState(1);
 
   if (connected_to_wifi && connected_to_server) closeConnection(CONNECTIONS_ALL);
   connected_to_wifi = false;
@@ -191,7 +191,7 @@ void StartConfiguringMode()
 
     } while (!rok);
 
-    IndicationController::ConfigState(2);
+    ind_controller->ConfigState(2);
 
     in_configuration_mode = true;
     reset_btn_pressed = false;
@@ -232,7 +232,7 @@ void StartConfiguringMode()
       delay(50);
     }
     
-    IndicationController::ConfigState(0);
+    ind_controller->ConfigState(0);
 }
 
 void StartConnection(bool reconnect) 
@@ -241,7 +241,7 @@ void StartConnection(bool reconnect)
   byte attempts = 0;
   char* reply;
   
-  IndicationController::ConnectState(1);
+  ind_controller->ConnectState(1);
   
   if (connected_to_wifi && connected_to_server) closeConnection(CONNECTIONS_ALL);
   in_configuration_mode = false;
@@ -327,7 +327,7 @@ void StartConnection(bool reconnect)
   }
   if (reconnect && connected_to_wifi && !connected_to_server) 
   {
-    IndicationController::ConnectState(2);
+    ind_controller->ConnectState(2);
     
     do {
       updateLCDAutoState();
@@ -387,7 +387,7 @@ void StartConnection(bool reconnect)
   
   DEBUG_WRITELN("Connected successfully!");
   setLCDText("Connected!");
-  IndicationController::ConnectState(0);
+  ind_controller->ConnectState(0);
 }
 
 bool startServer(unsigned connection, unsigned port)

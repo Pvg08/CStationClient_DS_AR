@@ -49,17 +49,17 @@ void HC_State_Changed()
   if (hc_state) {
     hc_info_sended = false;
     ON_PresenceDetected();
-    IndicationController::PresenceState(hc_state);
+    ind_controller->PresenceState(hc_state);
   }
 }
 
 void NS_State_Rising()
 {
-  if (!tone_frequency || (tone_periodic && tone_state)) {
+  if (tone_controller->isToneOff()) {
     ns_state = true;
     ns_info_sended = false;
     ON_PresenceDetected();
-    IndicationController::PresenceState(ns_state);
+    ind_controller->PresenceState(ns_state);
   }
 }
 
@@ -67,7 +67,7 @@ void SensorOuter_State_Changed()
 {
   sensor_outer_signal = digitalRead(SENSOR_OUT_PIN) == HIGH;
   sensor_outer_signal_sended = false;
-  IndicationController::OuterState(1);
+  ind_controller->OuterState(1);
 }
 
 void initSensors() 
@@ -172,7 +172,7 @@ bool sendSensorsInfo(unsigned connection_id)
 bool sensorsSending() 
 {
   if ((hc_state && !hc_info_sended) || (ns_state && !ns_info_sended) || !sensor_outer_signal_sended || (signal_btn_pressed && !signal_btn_sended)) {
-    IndicationController::SensorsSendingSignalState(1);
+    ind_controller->SensorsSendingSignalState(1);
   }
   
   bool result = false;
@@ -205,7 +205,7 @@ bool sensorsSending()
 
   if (!last_sending_millis || millis_sum_delay > SENDING_INTERVAL) 
   {
-    IndicationController::SensorsSendingState(1);
+    ind_controller->SensorsSendingState(1);
     
     char status;
     double T,P;
@@ -284,7 +284,7 @@ bool sensorsSending()
     }
     
     if (!hc_info_sended || !ns_info_sended) {
-      IndicationController::SensorsSendingSignalState(0);
+      ind_controller->SensorsSendingSignalState(0);
     }
     
     hc_info_sended = true;
@@ -292,7 +292,7 @@ bool sensorsSending()
 
     last_sending_millis = millis();
 
-    IndicationController::SensorsSendingState(0);
+    ind_controller->SensorsSendingState(0);
 
   } else if ((hc_state && !hc_info_sended) || (ns_state && !ns_info_sended) || !sensor_outer_signal_sended || (signal_btn_pressed && !signal_btn_sended)) {
     
@@ -325,7 +325,7 @@ bool sensorsSending()
     if (signal_btn_pressed && !signal_btn_sended) signal_btn_sended = info_sended;
     if (!sensor_outer_signal_sended) sensor_outer_signal_sended = info_sended;
 
-    IndicationController::SensorsSendingSignalState(0);
+    ind_controller->SensorsSendingSignalState(0);
   }
 
   return result;
