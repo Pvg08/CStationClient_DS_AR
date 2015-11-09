@@ -1,3 +1,5 @@
+#ifndef EEPROM_HELPER_H
+#define EEPROM_HELPER_H
 
 class EEPROM_Helper 
 {
@@ -33,4 +35,4 @@ class EEPROM_Helper
     }
 };
 
-
+#endif

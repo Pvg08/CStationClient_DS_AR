@@ -1,3 +1,5 @@
+#ifndef INDICATION_CONTROLLER_H
+#define INDICATION_CONTROLLER_H
 
 #define LED_BLUE_PIN 22
 #define LED_YELLOW_PIN 24
@@ -105,3 +107,5 @@ class IndicationController
 };
 
 IndicationController *IndicationController::_self_controller = NULL;
+
+#endif

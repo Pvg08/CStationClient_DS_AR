@@ -67,6 +67,7 @@ void StartConfiguringMode()
   byte attempts = 0;
   char* reply = NULL;
 
+  lcd_controller->fixPage(LCD_PAGE_SYSTEM);
   ind_controller->ConfigState(1);
 
   if (connected_to_wifi && connected_to_server) closeConnection(CONNECTIONS_ALL);
@@ -75,13 +76,13 @@ void StartConfiguringMode()
   in_configuration_mode = false;
 
   DEBUG_WRITELN("Starting configuration mode");
-  setLCDLines("Configuration", "      MODE");
+  lcd_controller->setLCDLines("Configuration", "      MODE");
   delay(1000);
   do {
-      updateLCDAutoState();
+      lcd_controller->updateLCDAutoState();
 
       DEBUG_WRITELN("Reset the module");
-      setLCDText("Reset");
+      lcd_controller->setLCDText("Reset");
       attempts = 0;
       do {
         espSerial.print("AT+RST\r\n");
@@ -92,7 +93,7 @@ void StartConfiguringMode()
       if (!rok) continue;
       
       DEBUG_WRITELN("Change to host mode");
-      setLCDText("Host mode ->");
+      lcd_controller->setLCDText("Host mode ->");
       attempts = 0;
       do {
         espSerial.print("AT+CWMODE=3\r\n");
@@ -103,7 +104,7 @@ void StartConfiguringMode()
       if (!rok) continue;
       
       DEBUG_WRITELN("Configuring a network");
-      setLCDLines("Set Network","Parameters");
+      lcd_controller->setLCDLines("Set Network","Parameters");
       attempts = 0;
       do {
         espSerial.print("AT+CWSAP=\"");
@@ -123,7 +124,7 @@ void StartConfiguringMode()
       
       if (strlen(wifi_ssid)>0 || strlen(wifi_passw)>0) {
         DEBUG_WRITELN("Connect to a network");
-        setLCDText("WIFI Network ->");
+        lcd_controller->setLCDText("WIFI Network ->");
         espSerial.print("AT+CWJAP=\"");
         espSerial.print(wifi_ssid);
         espSerial.print("\",\"");
@@ -133,7 +134,7 @@ void StartConfiguringMode()
       }
 
       DEBUG_WRITELN("Get ip address of the esp");
-      setLCDLines("Getting IP","address");
+      lcd_controller->setLCDLines("Getting IP","address");
       attempts = 0;
       do {
         espSerial.print("AT+CIFSR\r\n");
@@ -162,7 +163,7 @@ void StartConfiguringMode()
       ipAddress[buffpos] = 0;
 
       DEBUG_WRITELN("Set for multiple connections");
-      setLCDLines("Configuring","the connection");
+      lcd_controller->setLCDLines("Configuring","the connection");
       attempts = 0;
       do {
         espSerial.print("AT+CIPMUX=1\r\n");
@@ -175,7 +176,7 @@ void StartConfiguringMode()
       rok = startServer(1, CLIENT_PORT);
       if (!rok) {
         DEBUG_WRITELN("Can't start the server. Let's try again");
-        setLCDLines("Error: Can't", "start server");
+        lcd_controller->setLCDLines("Error: Can't", "start server");
         delay(5000);
         continue;
       }
@@ -185,9 +186,9 @@ void StartConfiguringMode()
       DEBUG_WRITELN("and perform setup operations...");
       
       delay(500);
-      setLCDLines("Waiting at host:", HOST_WIFI_SSID);
+      lcd_controller->setLCDLines("Waiting at host:", HOST_WIFI_SSID);
       delay(4000);
-      setLCDLines("Server IP:", ipAddress);
+      lcd_controller->setLCDLines("Server IP:", ipAddress);
 
     } while (!rok);
 
@@ -233,6 +234,8 @@ void StartConfiguringMode()
     }
     
     ind_controller->ConfigState(0);
+    lcd_controller->unfixPage();
+    lcd_controller->clearLCDText(LCD_PAGE_SYSTEM);
 }
 
 void StartConnection(bool reconnect) 
@@ -240,6 +243,8 @@ void StartConnection(bool reconnect)
   bool rok = true;
   byte attempts = 0;
   char* reply;
+
+  lcd_controller->fixPage(LCD_PAGE_SYSTEM);
   
   ind_controller->ConnectState(1);
   
@@ -251,11 +256,11 @@ void StartConnection(bool reconnect)
     connected_to_wifi = false;
     connected_to_server = false;
     do {
-      updateLCDAutoState();
+      lcd_controller->updateLCDAutoState();
 
       if (strlen(wifi_ssid)==0 || strlen(wifi_passw)==0 || strlen(server_ip_addr)==0 || !station_id) {
         DEBUG_WRITELN("Need to set SSID, password and server ip");
-        setLCDLines("Need ", "SSID, PWD, SRVIP");
+        lcd_controller->setLCDLines("Need ", "SSID, PWD, SRVIP");
         delay(5000);
         StartConfiguringMode();
         delay(1000);
@@ -263,7 +268,7 @@ void StartConnection(bool reconnect)
       }
 
       DEBUG_WRITELN("Reset the module");
-      setLCDText("Reset");
+      lcd_controller->setLCDText("Reset");
       attempts = 0;
       do {
         espSerial.print("AT+RST\r\n");
@@ -274,7 +279,7 @@ void StartConnection(bool reconnect)
       if (!rok) continue;
       
       DEBUG_WRITELN("Change to client mode");
-      setLCDText("Client mode ->");
+      lcd_controller->setLCDText("Client mode ->");
       attempts = 0;
       do {
         espSerial.print("AT+CWMODE=1\r\n");
@@ -285,7 +290,7 @@ void StartConnection(bool reconnect)
       if (!rok) continue;
   
       DEBUG_WRITELN("Connect to a network");
-      setLCDText("WIFI Network ->");
+      lcd_controller->setLCDText("WIFI Network ->");
       attempts = 0;
       do {
         espSerial.print("AT+CWJAP=\"");
@@ -300,7 +305,7 @@ void StartConnection(bool reconnect)
       if (!rok) continue;
   
       DEBUG_WRITELN("Get ip address assigned by the router");
-      setLCDLines("Getting IP","address");
+      lcd_controller->setLCDLines("Getting IP","address");
       attempts = 0;
       do {
         espSerial.print("AT+CIFSR\r\n");
@@ -311,7 +316,7 @@ void StartConnection(bool reconnect)
       if (!rok) continue;
   
       DEBUG_WRITELN("Set for multiple connections");
-      setLCDLines("Configuring","the connection");
+      lcd_controller->setLCDLines("Configuring","the connection");
       attempts = 0;
       do {
         espSerial.print("AT+CIPMUX=1\r\n");
@@ -330,10 +335,10 @@ void StartConnection(bool reconnect)
     ind_controller->ConnectState(2);
     
     do {
-      updateLCDAutoState();
+      lcd_controller->updateLCDAutoState();
       
       DEBUG_WRITELN("Connect to the server");
-      setLCDLines("Connect to", "server");
+      lcd_controller->setLCDLines("Connect to", "server");
       connection_id++;
       if (connection_id > MAX_CONNECTIONS) connection_id = 1;
       attempts = 0;
@@ -351,7 +356,7 @@ void StartConnection(bool reconnect)
       } while (!rok && attempts<MAX_ATTEMPTS);
       if (!rok) {
         DEBUG_WRITELN("Can't connect to server. Let's try again");
-        setLCDText("Error: No server");
+        lcd_controller->setLCDText("Error: No server");
         delay(10000);
         continue;
       }
@@ -359,41 +364,50 @@ void StartConnection(bool reconnect)
       rok = startServer(1, CLIENT_PORT);
       if (!rok) {
         DEBUG_WRITELN("Can't start the server. Let's try again");
-        setLCDLines("Error: Can't", "start server");
+        lcd_controller->setLCDLines("Error: Can't", "start server");
         delay(5000);
         continue;
       }
 
       DEBUG_WRITELN("Send identification Number");
-      setLCDText("Identification");
+      lcd_controller->setLCDText("Identification");
       reply = sendMessage(connection_id, "DS="+String(station_id), MAX_ATTEMPTS);
       rok = rok && StringHelper::replyIsOK(reply);
       
       DEBUG_WRITELN("Send sensors info");
-      setLCDLines("Sending sensors", "info");
+      lcd_controller->setLCDLines("Sending sensors", "info");
       rok = rok && sendSensorsInfo(connection_id);
       
       DEBUG_WRITELN("Send controls info");
-      setLCDLines("Sending controls", "info");
+      lcd_controller->setLCDLines("Sending controls", "info");
       rok = rok && sendControlsInfo(connection_id);
 
-      reply = sendMessage(connection_id, "DS_READY=1", 1);
+      reply = sendMessage(connection_id, "DS_READY=1", MAX_ATTEMPTS);
       rok = rok && StringHelper::replyIsOK(reply);
 
     } while (!rok);
     
     connected_to_server = true;
   }
-  
+
   DEBUG_WRITELN("Connected successfully!");
-  setLCDText("Connected!");
+  lcd_controller->setLCDText("Connected!", lcd_controller->pageIsEmpty(LCD_PAGE_SENSORS) ? LCD_PAGE_SENSORS : LCD_PAGE_SYSTEM);
+  lcd_controller->unfixPage();
+  lcd_controller->clearLCDText(LCD_PAGE_SYSTEM);
   ind_controller->ConnectState(0);
+  delay(2000);
+}
+
+bool sendTimeRequestSignal()
+{
+  char* reply = sendMessage(connection_id, "DS_GETTIME=1", MAX_ATTEMPTS);
+  return StringHelper::replyIsOK(reply);
 }
 
 bool startServer(unsigned connection, unsigned port)
 {
   DEBUG_WRITELN("Start the server");
-  setLCDLines("Start local", "server");
+  lcd_controller->setLCDLines("Start local", "server");
   unsigned attempts = 0;
   bool rok = false;
   char* reply;
@@ -413,7 +427,7 @@ bool startServer(unsigned connection, unsigned port)
 
 bool closeConnection(unsigned connection) {
   DEBUG_WRITELN("Closing the server");
-  setLCDLines("Close local", "server");
+  lcd_controller->setLCDLines("Close local", "server");
   unsigned attempts = 0;
   bool rok = false;
   char* reply;

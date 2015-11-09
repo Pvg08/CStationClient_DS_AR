@@ -1,3 +1,5 @@
+#ifndef TONE_CONTROLLER_H
+#define TONE_CONTROLLER_H
 
 #define TONE_PIN 7
 
@@ -158,3 +160,5 @@ void tone_period_function()
 };
 
 ToneController *ToneController::_self_controller = NULL;
+
+#endif

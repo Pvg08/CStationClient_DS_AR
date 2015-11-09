@@ -79,14 +79,14 @@ void initSensors()
   if (!H_init) 
   {
     DEBUG_WRITELN("Error with bmp180 connection\r\n");
-    setLCDText("BMP Sensor Error");
+    lcd_controller->setLCDText("BMP Sensor Error");
     delay(3000);
   }
   MXYZ_init = !!magnetic_meter.begin();
   if (!MXYZ_init) 
   {
     DEBUG_WRITELN("Error with HMC5883L connection\r\n");
-    setLCDLines("HMC5883L Sensor", "Error");
+    lcd_controller->setLCDLines("HMC5883L Sensor", "Error");
     delay(3000);
   } else {
     magnetic_meter.setRange(HMC5883L_RANGE_1_3GA);
@@ -275,7 +275,7 @@ bool sensorsSending()
       send_str = send_str + "'Mx':" + String(norm.XAxis, 0) + ",'My':" + String(norm.YAxis, 0) + ",'Mz':" + String(norm.ZAxis, 0);
     }
 
-    setLCDLines(lcd1.c_str(), lcd2.c_str());
+    lcd_controller->setLCDLines(lcd1.c_str(), lcd2.c_str(), LCD_PAGE_SENSORS);
     
     if (send_str.length()>0) {
       send_str = "DS_V={" + send_str + "}";

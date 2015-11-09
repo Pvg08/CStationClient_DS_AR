@@ -1,3 +1,5 @@
+#ifndef STRING_HELPER_H
+#define STRING_HELPER_H
 
 class StringHelper 
 {
@@ -74,3 +76,4 @@ class StringHelper
     }
 };
 
+#endif

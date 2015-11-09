@@ -2,6 +2,9 @@
 #include "Arduino.h"
 #include <EEPROM.h>
 #include <TimerOne.h>
+#include <Time.h>
+#include <Wire.h>
+#include <LiquidCrystal_I2C.h>
 #include "eeprom_helper.h"
 #include "string_helper.h"
 
@@ -21,6 +24,8 @@
 
 #define MAX_ATTEMPTS 5
 
+#define TIME_SYNC_INTERVAL 900
+
 #define RESET_BTN_PIN 48
 #define CONFIG_BTN_PIN 50
 #define SIGNAL_BTN_PIN 52
@@ -29,31 +34,26 @@
 #define CONTROL_BTN_INTERRUPT 0
 #define CONTROL_BTN_INTERRUPT_MODE RISING
 
-//#define LCD_I2C_ADDR 0x3F
-#define LCD_I2C_ADDR 0x27
-
 #include "indication_controller.h"
 IndicationController *ind_controller;
 #include "tone_controller.h"
 ToneController *tone_controller;
+#include "lcd_controller.h"
+LCDController *lcd_controller;
 
 byte errors_count = 0;
-
-unsigned long int timestamp = 0;
-unsigned long int timestamp_sync = 0;
 
 volatile bool reset_btn_pressed = false;
 volatile bool config_btn_pressed = false;
 volatile bool signal_btn_pressed = false;
 volatile bool signal_btn_sended = false;
 volatile bool need_auto_state_lcd_update = false;
+volatile bool time_return_wait = true;
 
-unsigned long int getCurrentTimestamp()
+time_t time_sync_provider()
 {
-  if (timestamp && timestamp_sync)
-    return timestamp + (millis()-timestamp_sync) / 1000;
-  else
-    return 0;
+  time_return_wait = true;
+  return 0;
 }
 
 void setup()
@@ -65,24 +65,27 @@ void setup()
   pinMode(CONTROL_BTN_PIN, INPUT);
   pinMode(TONE_PIN, OUTPUT);
   digitalWrite(TONE_PIN, HIGH);
-
+  attachInterrupt(CONTROL_BTN_INTERRUPT, ControlBTN_Rising, CONTROL_BTN_INTERRUPT_MODE);
+  setSyncInterval(TIME_SYNC_INTERVAL);
+  setSyncProvider(time_sync_provider);
+  lcd_controller = LCDController::Instance();
+  lcd_controller->initLCD();
   ind_controller = IndicationController::Instance();
   tone_controller = ToneController::Instance();
 
   initESP();
-  initLCD();
   delay(100);
   initSensors();
   delay(100);
   DEBUG_WRITELN("Start\r\n");
   delay(100);
   StartConnection(true);
-  attachInterrupt(CONTROL_BTN_INTERRUPT, ControlBTN_Rising, CONTROL_BTN_INTERRUPT_MODE);
   reset_btn_pressed = false;
   config_btn_pressed = false;
   signal_btn_pressed = false;
   signal_btn_sended = true;
   need_auto_state_lcd_update = false;
+  time_return_wait = true;
 }
 
 void loop()
@@ -103,11 +106,21 @@ void loop()
   }
   if (need_auto_state_lcd_update) {
     need_auto_state_lcd_update = false;
-    updateLCDAutoState();
+    lcd_controller->updateLCDAutoState();
   }
+  lcd_controller->timerProcess();
   
   executeCommands();
   sensorsSending();
+
+  if (time_return_wait) {
+    time_return_wait = false;
+    delay(100);
+    if (sendTimeRequestSignal()) {
+      delay(500);
+      executeCommands();
+    }
+  }
 }
 
 void ControlBTN_Rising() 
@@ -147,7 +160,7 @@ bool sendControlsInfo(unsigned connection_id)
   rok = StringHelper::replyIsOK(reply);
   if (!rok) return rok;
 
-  reply = sendMessage(connection_id, "DC_INFO={'CODE':'settime','PREFIX':'SET_TIME','PARAM':[{'NAME':'Timestamp','TYPE':'UINT'}]}", MAX_ATTEMPTS);
+  reply = sendMessage(connection_id, "DC_INFO={'CODE':'settime','PREFIX':'SET_TIME','PARAM':[{'NAME':'Timestamp','TYPE':'TIMESTAMP'}]}", MAX_ATTEMPTS);
   rok = StringHelper::replyIsOK(reply);
   if (!rok) return rok;
 
@@ -182,8 +195,9 @@ void executeInputMessage(char *input_message)
       String states_str = "DS_STATE={";
       states_str = states_str + "\"LED\":\""+(ind_controller->getProgLedState() ? "on" : "off")+"\", ";
       states_str = states_str + "\"TONE\":\""+(tone_controller->getToneState() ? "on" : "off")+"\", ";
-      states_str = states_str + "\"TIME\":\""+String(getCurrentTimestamp())+"\", ";
-      states_str = states_str + "\"TIME_SYNC\":\""+String(timestamp_sync)+"\"";
+      states_str = states_str + "\"TIME\":\""+String(now())+"\", ";
+      states_str = states_str + "\"SYNC_INTERVAL\":\""+String(TIME_SYNC_INTERVAL)+"\", ";
+      states_str = states_str + "\"TIME_STATUS\":\""+String(timeStatus())+"\"";
       states_str += "}";
       delay(50);
       sendMessage(connection_id, states_str, MAX_ATTEMPTS);
@@ -199,13 +213,20 @@ void executeInputMessage(char *input_message)
     } else if ((param = StringHelper::getMessageParam(message, "TONE=", true))) {
       tone_controller->RunProcess(param);
     } else if ((param = StringHelper::getMessageParam(message, "SERV_LT=", true))) {
-      if (param[0]) setLCDFixed(param); else resetLCDFixed();
+      if (param[0]) {
+        lcd_controller->setLCDText(param, LCD_PAGE_OUTER);
+        lcd_controller->fixPage(LCD_PAGE_OUTER);
+      } else {
+        lcd_controller->unfixPage();
+        lcd_controller->clearLCDText(LCD_PAGE_OUTER);
+      }
     } else if ((param = StringHelper::getMessageParam(message, "SET_DISPLAY_ST=", true))) {
       byte new_d_state = StringHelper::readIntFromString(param, 0);
-      if (new_d_state<2) setLCDState(new_d_state!=0); else setLCDAutoState();
+      if (new_d_state<2) lcd_controller->setLCDState(new_d_state!=0); else lcd_controller->setLCDAutoState();
     } else if ((param = StringHelper::getMessageParam(message, "SET_TIME=", true))) {
-      timestamp = StringHelper::readIntFromString(param, 0);
-      timestamp_sync = millis();
+      time_t timestamp = StringHelper::readIntFromString(param, 0);
+      setTime(timestamp);
+      lcd_controller->redrawTimePage();
     }
     delay (100);
   }
