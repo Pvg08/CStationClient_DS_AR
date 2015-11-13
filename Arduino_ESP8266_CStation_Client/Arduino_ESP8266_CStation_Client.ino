@@ -1,7 +1,7 @@
 
 #include "Arduino.h"
 #include <EEPROM.h>
-#include <TimerOne.h>
+#include <Timer5.h>
 #include <Time.h>
 #include <Wire.h>
 #include <LiquidCrystal_I2C.h>
@@ -24,7 +24,7 @@
 
 #define MAX_ATTEMPTS 5
 
-#define TIME_SYNC_INTERVAL 900
+#define TIME_SYNC_INTERVAL 1861
 
 #define RESET_BTN_PIN 48
 #define CONFIG_BTN_PIN 50
@@ -59,12 +59,12 @@ time_t time_sync_provider()
 void setup()
 {
   Serial.begin(BAUD_RATE);
+  pinMode(TONE_PIN, OUTPUT);
+  digitalWrite(TONE_PIN, HIGH);
   pinMode(RESET_BTN_PIN, INPUT);
   pinMode(CONFIG_BTN_PIN, INPUT);
   pinMode(SIGNAL_BTN_PIN, INPUT);
   pinMode(CONTROL_BTN_PIN, INPUT);
-  pinMode(TONE_PIN, OUTPUT);
-  digitalWrite(TONE_PIN, HIGH);
   attachInterrupt(CONTROL_BTN_INTERRUPT, ControlBTN_Rising, CONTROL_BTN_INTERRUPT_MODE);
   setSyncInterval(TIME_SYNC_INTERVAL);
   setSyncProvider(time_sync_provider);
@@ -72,15 +72,10 @@ void setup()
   lcd_controller->initLCD();
   ind_controller = IndicationController::Instance();
   tone_controller = ToneController::Instance();
-
   initESP();
-  delay(100);
   initSensors();
-  delay(100);
-  DEBUG_WRITELN("Start\r\n");
-  delay(100);
-  StartConnection(true);
-  reset_btn_pressed = false;
+  DEBUG_WRITELN("Starting...\r\n");
+  reset_btn_pressed = true;
   config_btn_pressed = false;
   signal_btn_pressed = false;
   signal_btn_sended = true;
@@ -90,25 +85,31 @@ void setup()
 
 void loop()
 {
+  lcd_controller->timerProcess();
+  tone_controller->timerProcess();
+
   if (config_btn_pressed) {
     DEBUG_WRITELN("Config BTN pressed. Entering configuration mode\r\n");
     StartConfiguringMode();
     config_btn_pressed = false;
     reset_btn_pressed = true;
+    signal_btn_pressed = false;
+    signal_btn_sended = true;
     return;
   }
   if (reset_btn_pressed) {
-    DEBUG_WRITELN("Reset BTN pressed. Resetting\r\n");
+    DEBUG_WRITELN("Reset initiated. Resetting...\r\n");
     StartConnection(true);
     reset_btn_pressed = false;
     config_btn_pressed = false;
+    signal_btn_pressed = false;
+    signal_btn_sended = true;
     return;
   }
   if (need_auto_state_lcd_update) {
     need_auto_state_lcd_update = false;
     lcd_controller->updateLCDAutoState();
   }
-  lcd_controller->timerProcess();
   
   executeCommands();
   sensorsSending();
@@ -125,10 +126,13 @@ void loop()
 
 void ControlBTN_Rising() 
 {
-  if (!reset_btn_pressed) reset_btn_pressed = digitalRead(RESET_BTN_PIN) == HIGH;
-  if (!config_btn_pressed) config_btn_pressed = digitalRead(CONFIG_BTN_PIN) == HIGH;
-  if (!signal_btn_pressed) signal_btn_pressed = digitalRead(SIGNAL_BTN_PIN) == HIGH;
-  signal_btn_sended = !signal_btn_pressed;
+  delay(50);
+  if (digitalRead(CONTROL_BTN_PIN) == HIGH) {
+    if (!reset_btn_pressed) reset_btn_pressed = digitalRead(RESET_BTN_PIN) == HIGH;
+    if (!config_btn_pressed) config_btn_pressed = digitalRead(CONFIG_BTN_PIN) == HIGH;
+    if (!signal_btn_pressed) signal_btn_pressed = digitalRead(SIGNAL_BTN_PIN) == HIGH;
+    signal_btn_sended = !signal_btn_pressed;
+  }
 }
 
 bool sendControlsInfo(unsigned connection_id)
@@ -194,7 +198,7 @@ void executeInputMessage(char *input_message)
     } else if ((param = StringHelper::getMessageParam(message, "STATES_REQUEST=1", true))) {
       String states_str = "DS_STATE={";
       states_str = states_str + "\"LED\":\""+(ind_controller->getProgLedState() ? "on" : "off")+"\", ";
-      states_str = states_str + "\"TONE\":\""+(tone_controller->getToneState() ? "on" : "off")+"\", ";
+      states_str = states_str + "\"TONE\":\""+(tone_controller->isToneRunning() ? "on" : "off")+"\", ";
       states_str = states_str + "\"TIME\":\""+String(now())+"\", ";
       states_str = states_str + "\"SYNC_INTERVAL\":\""+String(TIME_SYNC_INTERVAL)+"\", ";
       states_str = states_str + "\"TIME_STATUS\":\""+String(timeStatus())+"\"";
@@ -211,7 +215,7 @@ void executeInputMessage(char *input_message)
         ind_controller->SetProgLedState(0);
       }
     } else if ((param = StringHelper::getMessageParam(message, "TONE=", true))) {
-      tone_controller->RunProcess(param);
+      tone_controller->RunCommand(param);
     } else if ((param = StringHelper::getMessageParam(message, "SERV_LT=", true))) {
       if (param[0]) {
         lcd_controller->setLCDText(param, LCD_PAGE_OUTER);
@@ -241,3 +245,4 @@ void ON_PresenceDetected()
 {
   need_auto_state_lcd_update = true;
 }
+

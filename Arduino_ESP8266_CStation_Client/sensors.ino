@@ -55,7 +55,7 @@ void HC_State_Changed()
 
 void NS_State_Rising()
 {
-  if (tone_controller->isToneOff()) {
+  if (!tone_controller->isToneRunning()) {
     ns_state = true;
     ns_info_sended = false;
     ON_PresenceDetected();
@@ -173,6 +173,9 @@ bool sensorsSending()
 {
   if ((hc_state && !hc_info_sended) || (ns_state && !ns_info_sended) || !sensor_outer_signal_sended || (signal_btn_pressed && !signal_btn_sended)) {
     ind_controller->SensorsSendingSignalState(1);
+    if (signal_btn_pressed && !signal_btn_sended) {
+      tone_controller->FastToneSignal(400, 1000);
+    }
   }
   
   bool result = false;

@@ -1,6 +1,4 @@
 
-//#include <SoftwareSerial.h>
-
 #define HOST_WIFI_SSID "ESP_CONF_HOST"
 #define HOST_WIFI_PASSWORD ""
 #define HOST_WIFI_CHANNEL 1
@@ -20,12 +18,6 @@
 #define CONNECTIONS_ALL 5
 
 #define CONNECTION_ESP_PIN 26
-
-// FOR ARDUINO UNO
-// Arduino Pin 2 to RX
-// Arduino Pin 3 to TX
-// Need to set baud rate to 9600
-// SoftwareSerial espSerial(2, 3);
 
 // FOR ARDUINO MEGA
 // Arduino TX2 for RX
@@ -69,6 +61,9 @@ void StartConfiguringMode()
 
   lcd_controller->fixPage(LCD_PAGE_SYSTEM);
   ind_controller->ConfigState(1);
+
+  if (tone_controller->isToneRunning()) tone_controller->StopTone();
+  tone_controller->FastToneSignal(1000, 1500);
 
   if (connected_to_wifi && connected_to_server) closeConnection(CONNECTIONS_ALL);
   connected_to_wifi = false;
@@ -245,9 +240,10 @@ void StartConnection(bool reconnect)
   char* reply;
 
   lcd_controller->fixPage(LCD_PAGE_SYSTEM);
-  
   ind_controller->ConnectState(1);
-  
+  if (tone_controller->isToneRunning()) tone_controller->StopTone();
+  tone_controller->FastToneSignal(500, 1000);
+
   if (connected_to_wifi && connected_to_server) closeConnection(CONNECTIONS_ALL);
   in_configuration_mode = false;
 

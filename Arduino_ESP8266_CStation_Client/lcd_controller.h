@@ -1,11 +1,11 @@
 #ifndef LCD_CONTROLLER_H
 #define LCD_CONTROLLER_H
 
-//#define LCD_I2C_ADDR 0x3F
-#define LCD_I2C_ADDR 0x27
+#define LCD_I2C_ADDR 0x3F
+//#define LCD_I2C_ADDR 0x27
 
 #define LCD_AUTO_TURNOFF_MSTIME 100000
-#define LCD_AUTO_TURNPAGE_MSTIME 5000
+#define LCD_AUTO_TURNPAGE_MSTIME 7000
 #define LCD_AUTO_UPDTIME_MSTIME 30000
 
 #define LCD_PAGES_COUNT 4
@@ -22,9 +22,9 @@ class LCDController
     bool fixed_page;
     bool lcd_auto_state;
     bool lcd_ison;
-    unsigned long int last_auto_state = 0;
-    unsigned long int last_pager_state = 0;
-    unsigned long int last_time_state = 0;
+    unsigned long int last_auto_state;
+    unsigned long int last_pager_state;
+    unsigned long int last_time_state;
     char line1_dyn[LCD_PAGES_COUNT][17];
     char line2_dyn[LCD_PAGES_COUNT][17];
     bool text_changed;
@@ -53,6 +53,9 @@ class LCDController
 
     LCDController() 
     {
+      last_auto_state = 0;
+      last_pager_state = 0;
+      last_time_state = 0;
       lcd = new LiquidCrystal_I2C(LCD_I2C_ADDR, 16, 2);
       initLCD();
     }
