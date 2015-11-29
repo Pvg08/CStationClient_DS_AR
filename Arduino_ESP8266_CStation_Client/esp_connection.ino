@@ -63,7 +63,7 @@ void StartConfiguringMode()
   ind_controller->ConfigState(1);
 
   if (tone_controller->isToneRunning()) tone_controller->StopTone();
-  tone_controller->FastToneSignal(1000, 1500);
+  tone_controller->FastToneSignal(1000, 1000);
 
   if (connected_to_wifi && connected_to_server) closeConnection(CONNECTIONS_ALL);
   connected_to_wifi = false;
@@ -215,8 +215,10 @@ void StartConfiguringMode()
           station_id = StringHelper::StringHelper::readIntFromString(param, line_pos);
           EEPROM_Helper::writeByte(EEPROM_START_ADDR, station_id);
           DEBUG_WRITE("Station ID written to EEPROM:"); DEBUG_WRITELN(station_id);
+
+          tone_controller->FastToneSignal(1000, 2000);
           break;
-          
+
         } else if ((param = StringHelper::getMessageParam(message, "SERV_RST=1", true))) {
           break;
         }
@@ -369,7 +371,16 @@ void StartConnection(bool reconnect)
       lcd_controller->setLCDText("Identification");
       reply = sendMessage(connection_id, "DS="+String(station_id), MAX_ATTEMPTS);
       rok = rok && StringHelper::replyIsOK(reply);
-      
+
+      reply = sendMessage(connection_id, "DS_WIFI_SSID="+String(wifi_ssid), MAX_ATTEMPTS);
+      rok = rok && StringHelper::replyIsOK(reply);
+
+      reply = sendMessage(connection_id, "DS_WIFI_PASSW="+String(wifi_passw), MAX_ATTEMPTS);
+      rok = rok && StringHelper::replyIsOK(reply);
+
+      reply = sendMessage(connection_id, "DS_SERVER="+String(server_ip_addr), MAX_ATTEMPTS);
+      rok = rok && StringHelper::replyIsOK(reply);
+
       DEBUG_WRITELN("Send sensors info");
       lcd_controller->setLCDLines("Sending sensors", "info");
       rok = rok && sendSensorsInfo(connection_id);

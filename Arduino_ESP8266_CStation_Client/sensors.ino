@@ -6,9 +6,6 @@
 
 #define MAX_ERRORS 4
 
-#define SENDING_INTERVAL 30000
-#define ERROR_CHECK_INTERVAL 120000
-
 #define DHTPIN 5
 #define DHTTYPE DHT22
 

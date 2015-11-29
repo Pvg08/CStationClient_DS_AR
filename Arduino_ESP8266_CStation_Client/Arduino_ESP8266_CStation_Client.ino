@@ -25,6 +25,8 @@
 #define MAX_ATTEMPTS 5
 
 #define TIME_SYNC_INTERVAL 1861
+#define SENDING_INTERVAL 30000
+#define ERROR_CHECK_INTERVAL 120000
 
 #define RESET_BTN_PIN 48
 #define CONFIG_BTN_PIN 50
@@ -164,7 +166,7 @@ bool sendControlsInfo(unsigned connection_id)
   rok = StringHelper::replyIsOK(reply);
   if (!rok) return rok;
 
-  reply = sendMessage(connection_id, "DC_INFO={'CODE':'settime','PREFIX':'SET_TIME','PARAM':[{'NAME':'Timestamp','TYPE':'TIMESTAMP'}]}", MAX_ATTEMPTS);
+  reply = sendMessage(connection_id, "DC_INFO={'CODE':'settime','PREFIX':'SET_TIME','PARAM':[{'NAME':'Timestamp','TYPE':'TIMESTAMP'}],'BUTTONS':[{'NAME':'Request','PARAMSET':['R']}]}", MAX_ATTEMPTS);
   rok = StringHelper::replyIsOK(reply);
   if (!rok) return rok;
 
@@ -201,6 +203,8 @@ void executeInputMessage(char *input_message)
       states_str = states_str + "\"TONE\":\""+(tone_controller->isToneRunning() ? "on" : "off")+"\", ";
       states_str = states_str + "\"TIME\":\""+String(now())+"\", ";
       states_str = states_str + "\"SYNC_INTERVAL\":\""+String(TIME_SYNC_INTERVAL)+"\", ";
+      states_str = states_str + "\"SENDING_INTERVAL\":\""+String(SENDING_INTERVAL)+"\", ";
+      states_str = states_str + "\"ERROR_CHECK_INTERVAL\":\""+String(ERROR_CHECK_INTERVAL)+"\", ";
       states_str = states_str + "\"TIME_STATUS\":\""+String(timeStatus())+"\"";
       states_str += "}";
       delay(50);
@@ -228,9 +232,13 @@ void executeInputMessage(char *input_message)
       byte new_d_state = StringHelper::readIntFromString(param, 0);
       if (new_d_state<2) lcd_controller->setLCDState(new_d_state!=0); else lcd_controller->setLCDAutoState();
     } else if ((param = StringHelper::getMessageParam(message, "SET_TIME=", true))) {
-      time_t timestamp = StringHelper::readIntFromString(param, 0);
-      setTime(timestamp);
-      lcd_controller->redrawTimePage();
+      if (param[0]=='R') {
+        time_return_wait = true;
+      } else {
+        time_t timestamp = StringHelper::readIntFromString(param, 0);
+        setTime(timestamp);
+        lcd_controller->redrawTimePage();
+      }
     }
     delay (100);
   }
