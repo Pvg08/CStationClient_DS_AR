@@ -14,6 +14,9 @@
 #define LCD_PAGE_SENSORS 2
 #define LCD_PAGE_TIME 3
 
+#define BEEP_START_HOUR 6
+#define BEEP_STOP_HOUR 22
+
 class LCDController 
 {
   private:
@@ -24,12 +27,14 @@ class LCDController
     bool lcd_ison;
     unsigned long int last_auto_state;
     unsigned long int last_pager_state;
-    unsigned long int last_time_state;
     char line1_dyn[LCD_PAGES_COUNT][17];
     char line2_dyn[LCD_PAGES_COUNT][17];
     bool text_changed;
     byte page_num;
     byte page_to;
+
+    byte old_hour;
+    byte old_minute;
 
   public:
     static LCDController *_self_controller;
@@ -55,7 +60,7 @@ class LCDController
     {
       last_auto_state = 0;
       last_pager_state = 0;
-      last_time_state = 0;
+      old_hour = 255;
       lcd = new LiquidCrystal_I2C(LCD_I2C_ADDR, 16, 2);
       initLCD();
     }
@@ -76,16 +81,21 @@ class LCDController
       lcd->backlight();
       lcd->home(); 
       lcd->clear(); 
-      last_auto_state = last_pager_state = last_time_state = millis();
+      last_auto_state = last_pager_state = millis();
       showCurrentPage();
     }
 
     void timerProcess()
     {
       unsigned long int cmilli = millis();
-      if (cmilli-last_time_state > LCD_AUTO_UPDTIME_MSTIME) {
-        last_time_state = cmilli;
-        if (timeStatus()!=timeNotSet) {
+      if (timeStatus()!=timeNotSet) {
+        if (old_hour != hour()) {
+          old_hour = hour();
+          if (old_hour >= BEEP_START_HOUR && old_hour <= BEEP_STOP_HOUR) {
+            tone_controller->FastToneSignal(800, 1500);
+          }
+        }
+        if (old_minute != minute()) {
           String ts = String(hour())+":";
           if (minute()<10) ts+="0";
           ts+=String(minute());
@@ -104,7 +114,7 @@ class LCDController
     }
 
     void redrawTimePage() {
-      last_time_state = 0;
+      old_hour = hour();
       timerProcess();
       if (page_num == LCD_PAGE_TIME) {
         showCurrentPage();
