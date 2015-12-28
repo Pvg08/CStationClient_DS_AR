@@ -1,8 +1,8 @@
 #ifndef LCD_CONTROLLER_H
 #define LCD_CONTROLLER_H
 
-#define LCD_I2C_ADDR 0x3F
-//#define LCD_I2C_ADDR 0x27
+//#define LCD_I2C_ADDR 0x3F
+#define LCD_I2C_ADDR 0x27
 
 #define LCD_AUTO_TURNOFF_MSTIME 100000
 #define LCD_AUTO_TURNPAGE_MSTIME 7000
@@ -96,6 +96,7 @@ class LCDController
           }
         }
         if (old_minute != minute()) {
+          old_minute = minute();
           String ts = String(hour())+":";
           if (minute()<10) ts+="0";
           ts+=String(minute());

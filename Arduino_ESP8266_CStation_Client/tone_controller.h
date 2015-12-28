@@ -4,6 +4,22 @@
 #define TONE_PIN 7
 #define MAX_TIMER_PERIOD 1000
 
+unsigned int oct_freq[9][7]= {
+  {16,  18,  21,  22,  25,  28,  31  },
+  {33,  37,  41,  44,  49,  55,  62  },
+  {65,  73,  82,  87,  98,  110, 123 },
+  {131, 147, 165, 175, 196, 220, 247 },
+  {262, 294, 330, 349, 392, 440, 494 },
+  {523, 587, 659, 698, 784, 880, 988 },
+  {1046,1175,1319,1568,1760,1976,1967},
+  {2093,2349,2637,2794,3136,3520,3951},
+  {4186,4699,5274,5588,6272,7040,7902}
+};
+
+char melody[134] = "G4,E5,E5,D5,E5,C5,G4,G4,G4,E5,E5,F5,D5,G5,,G5,A4,A4,F5,F5,E5,D5,C5,G4,E5,E5,D5,E5,C5,,G5,A4,A4,F5,F5,E5,D5,C5,G4,E5,G4,E5,E5,D5,E5,C5";
+
+unsigned int melody_tempo = 600;
+
 class ToneController 
 {
   private:
@@ -18,6 +34,8 @@ class ToneController
     volatile bool prog_led_state; // Current Led state
     volatile bool fast_signal_active; // Fast signal flag
     volatile bool tone_muted;
+    volatile bool tone_is_melody;
+    volatile unsigned int melody_pos;
 
     volatile unsigned long timer_counter;
     volatile unsigned long timer_counter_max;
@@ -93,6 +111,42 @@ class ToneController
       StartTonePeriodTimer(period);
     }
 
+    void ToneMelodyAction()
+    {
+      if (melody[melody_pos]==0) {
+        noTone(TONE_PIN);
+        digitalWrite(TONE_PIN, HIGH);
+        tone_muted = true;
+        return;
+      }
+      if (melody[melody_pos]==',') melody_pos++;
+      if (melody[melody_pos]==',' || melody[melody_pos]==0) {
+        noTone(TONE_PIN);
+        digitalWrite(TONE_PIN, HIGH);
+        if (melody[melody_pos]==0) {
+          tone_muted = true;
+          return;
+        }
+      } else {
+        char bukv = melody[melody_pos];
+        byte b_pos = 0;
+        switch(bukv) {
+          case 'C': b_pos = 0; break;
+          case 'D': b_pos = 1; break;
+          case 'E': b_pos = 2; break;
+          case 'F': b_pos = 3; break;
+          case 'G': b_pos = 4; break;
+          case 'A': b_pos = 5; break;
+          case 'B': b_pos = 6; break;
+        }
+        melody_pos++;
+        char cifr = melody[melody_pos];
+        byte c_pos = cifr - '0';
+        tone(TONE_PIN, oct_freq[c_pos][b_pos]);
+      }
+      melody_pos++;
+    }
+
     void TonePeriodAction()
     {
       tone_state = !tone_state;
@@ -138,6 +192,7 @@ class ToneController
     {
       pinMode(TONE_PIN, OUTPUT);
       digitalWrite(TONE_PIN, HIGH);
+      melody_pos = 0;
       tone_frequency = 0;
       tone_period = 0;
       tone_is_active = false;
@@ -148,6 +203,7 @@ class ToneController
       prog_led_state = false;
       fast_signal_active = false;
       tone_muted = false;
+      tone_is_melody = false;
     }
 
     void timerProcess()
@@ -165,6 +221,19 @@ class ToneController
     void setLedControl(bool state)
     {
       prog_led_tone_control = state;
+    }
+
+    void StartMelodyTone()
+    {
+      DEBUG_WRITELN("Starting melody");
+      tone_frequency = 1;
+      melody_pos = 0;
+      tone_periodic_repeats = 1;
+      tone_state = true;
+      tone_is_active = true;
+      tone_is_melody = true;
+      ToneMelodyAction();
+      StartTonePeriodTimer(melody_tempo);
     }
 
     void StartTone(unsigned frequency, unsigned long period)
@@ -186,6 +255,7 @@ class ToneController
       StopTonePeriodTimer();
       noTone(TONE_PIN);
       digitalWrite(TONE_PIN, HIGH);
+      tone_is_melody = false;
       tone_is_active = false;
       fast_signal_active = false;
       tone_state = false;
@@ -200,10 +270,14 @@ class ToneController
     void TonePeriodTimerSignal()
     {
       if (timer_counter && tone_periodic && !tone_muted && tone_is_active) {
-        timer_counter--;
-        if (!timer_counter) {
-          timer_counter = timer_counter_max;
-          TonePeriodAction();
+        if (tone_is_melody) {
+          ToneMelodyAction();
+        } else {
+          timer_counter--;
+          if (!timer_counter) {
+            timer_counter = timer_counter_max;
+            TonePeriodAction();
+          }
         }
       }
     }

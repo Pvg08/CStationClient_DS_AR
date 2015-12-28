@@ -244,7 +244,8 @@ void StartConnection(bool reconnect)
   lcd_controller->fixPage(LCD_PAGE_SYSTEM);
   ind_controller->ConnectState(1);
   if (tone_controller->isToneRunning()) tone_controller->StopTone();
-  tone_controller->FastToneSignal(500, 1000);
+  delay(500);
+  tone_controller->StartMelodyTone();
 
   if (connected_to_wifi && connected_to_server) closeConnection(CONNECTIONS_ALL);
   in_configuration_mode = false;
