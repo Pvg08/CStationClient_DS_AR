@@ -36,6 +36,9 @@
 #define CONTROL_BTN_INTERRUPT 0
 #define CONTROL_BTN_INTERRUPT_MODE RISING
 
+char melody1[129] = "G4,E5,E5,D5,E5,C5,G4,G4,G4,E5,E5,F5,D5,G5,,G5,A4,A4,F5,F5,E5,D5,C5,G4,E5,E5,D5,E5,C5,,G5,A4,A4,F5,F5,E5,D5,C5,G4,E5,E5,D5,E5,C5";
+char melody2[129] = "G4,E5,E5,E5,D5,E5,C5";
+
 #include "indication_controller.h"
 IndicationController *ind_controller;
 #include "tone_controller.h"
@@ -128,7 +131,6 @@ void loop()
 
 void ControlBTN_Rising() 
 {
-  delay(50);
   if (digitalRead(CONTROL_BTN_PIN) == HIGH) {
     if (!reset_btn_pressed) reset_btn_pressed = digitalRead(RESET_BTN_PIN) == HIGH;
     if (!config_btn_pressed) config_btn_pressed = digitalRead(CONFIG_BTN_PIN) == HIGH;

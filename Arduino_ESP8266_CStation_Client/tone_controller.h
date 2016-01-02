@@ -16,8 +16,6 @@ unsigned int oct_freq[9][7]= {
   {4186,4699,5274,5588,6272,7040,7902}
 };
 
-char melody[134] = "G4,E5,E5,D5,E5,C5,G4,G4,G4,E5,E5,F5,D5,G5,,G5,A4,A4,F5,F5,E5,D5,C5,G4,E5,E5,D5,E5,C5,,G5,A4,A4,F5,F5,E5,D5,C5,G4,E5,G4,E5,E5,D5,E5,C5";
-
 unsigned int melody_tempo = 600;
 
 class ToneController 
@@ -35,6 +33,7 @@ class ToneController
     volatile bool fast_signal_active; // Fast signal flag
     volatile bool tone_muted;
     volatile bool tone_is_melody;
+	char *melody;
     volatile unsigned int melody_pos;
 
     volatile unsigned long timer_counter;
@@ -223,8 +222,9 @@ class ToneController
       prog_led_tone_control = state;
     }
 
-    void StartMelodyTone()
+    void StartMelodyTone(char *cmelody)
     {
+	  melody = cmelody;
       DEBUG_WRITELN("Starting melody");
       tone_frequency = 1;
       melody_pos = 0;
