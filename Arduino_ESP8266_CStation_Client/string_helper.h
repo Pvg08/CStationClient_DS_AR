@@ -24,17 +24,20 @@ class StringHelper
       }
       return NULL;
     }
-    
-    static unsigned long int readIntFromString(const char* message, unsigned from_pos)
+
+    static unsigned long int readIntFromString(const char* message, unsigned from_pos = 0, unsigned* next_pos = NULL)
     {
       unsigned long int result = 0;
       while (message && message[from_pos]>='0' && message[from_pos]<='9') {
         result = 10*result + message[from_pos] - '0';
         from_pos++;
       }
+      if (next_pos) {
+        *next_pos = from_pos;
+      }
       return result;
     }
-    
+
     static bool readLineToStr(const char* message, char* buff, unsigned buff_maxlen, unsigned from_pos, unsigned* next_line_pos) 
     {
       if (message && buff && buff_maxlen && message[from_pos]) {

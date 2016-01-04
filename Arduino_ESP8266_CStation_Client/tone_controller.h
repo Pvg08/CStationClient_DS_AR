@@ -16,8 +16,6 @@ unsigned int oct_freq[9][7]= {
   {4186,4699,5274,5588,6272,7040,7902}
 };
 
-unsigned int melody_tempo = 600;
-
 class ToneController 
 {
   private:
@@ -33,7 +31,8 @@ class ToneController
     volatile bool fast_signal_active; // Fast signal flag
     volatile bool tone_muted;
     volatile bool tone_is_melody;
-	char *melody;
+    char *melody;
+    unsigned int melody_tempo;
     volatile unsigned int melody_pos;
 
     volatile unsigned long timer_counter;
@@ -203,6 +202,7 @@ class ToneController
       fast_signal_active = false;
       tone_muted = false;
       tone_is_melody = false;
+      melody_tempo = 600;
     }
 
     void timerProcess()
@@ -224,7 +224,18 @@ class ToneController
 
     void StartMelodyTone(char *cmelody)
     {
-	  melody = cmelody;
+      melody = cmelody;
+      unsigned int pos;
+      unsigned int melody_ctemp = StringHelper::readIntFromString(melody, 0, &pos);
+      if (melody_ctemp) {
+        melody_tempo = 60000 / melody_ctemp;
+      } else {
+        melody_tempo = 600;
+      }
+      if (melody[pos] == ':') {
+        pos++;
+      }
+      melody += pos;
       DEBUG_WRITELN("Starting melody");
       tone_frequency = 1;
       melody_pos = 0;

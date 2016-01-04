@@ -245,7 +245,7 @@ void StartConnection(bool reconnect)
   ind_controller->ConnectState(1);
   if (tone_controller->isToneRunning()) tone_controller->StopTone();
   delay(500);
-  tone_controller->StartMelodyTone(melody1);
+  tone_controller->StartMelodyTone(melody_list[1]);
 
   if (connected_to_wifi && connected_to_server) closeConnection(CONNECTIONS_ALL);
   in_configuration_mode = false;

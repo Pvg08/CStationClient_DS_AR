@@ -92,10 +92,11 @@ class LCDController
         if (old_hour != hour()) {
           old_hour = hour();
           if (old_hour >= BEEP_START_HOUR && old_hour <= BEEP_STOP_HOUR) {
-            if (old_hour != BEEP_START_HOUR)
-				tone_controller->FastToneSignal(800, 1500);
-			else 
-				tone_controller->StartMelodyTone(melody1);
+            if (old_hour != BEEP_START_HOUR) {
+      				tone_controller->FastToneSignal(800, 1500);
+            } else {
+      				tone_controller->StartMelodyTone(melody_list[0]);
+            }
           }
         }
         if (old_minute != minute()) {

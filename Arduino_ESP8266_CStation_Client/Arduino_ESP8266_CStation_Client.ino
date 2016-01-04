@@ -36,8 +36,11 @@
 #define CONTROL_BTN_INTERRUPT 0
 #define CONTROL_BTN_INTERRUPT_MODE RISING
 
-char melody1[129] = "G4,E5,E5,D5,E5,C5,G4,G4,G4,E5,E5,F5,D5,G5,,G5,A4,A4,F5,F5,E5,D5,C5,G4,E5,E5,D5,E5,C5,,G5,A4,A4,F5,F5,E5,D5,C5,G4,E5,E5,D5,E5,C5";
-char melody2[129] = "G4,E5,E5,E5,D5,E5,C5";
+byte melody_count = 2;
+char *melody_list[] = {
+  "100:G4,E5,E5,D5,E5,C5,G4,G4,G4,E5,E5,F5,D5,G5,,G5,A4,A4,F5,F5,E5,D5,C5,G4,E5,E5,D5,E5,C5,,G5,A4,A4,F5,F5,E5,D5,C5,G4,E5,E5,D5,E5,C5", 
+  "100:G5,A4,A4,F5,F5,E5,D5,C5,G4,E5,E5,D5,E5,C5"
+};
 
 #include "indication_controller.h"
 IndicationController *ind_controller;
