@@ -16,6 +16,9 @@ unsigned int oct_freq[9][7]= {
   {4186,4699,5274,5588,6272,7040,7902}
 };
 
+float diez_k = 1.059463;
+float bemol_k = 0.9438743;
+
 class ToneController 
 {
   private:
@@ -32,8 +35,11 @@ class ToneController
     volatile bool tone_muted;
     volatile bool tone_is_melody;
     char *melody;
+	int sub_level;
     unsigned int melody_tempo;
     volatile unsigned int melody_pos;
+	volatile byte melody_timer_counter;
+	volatile byte melody_timer_counter_max;
 
     volatile unsigned long timer_counter;
     volatile unsigned long timer_counter_max;
@@ -111,6 +117,11 @@ class ToneController
 
     void ToneMelodyAction()
     {
+	  if (melody_timer_counter<melody_timer_counter_max) {
+		  melody_timer_counter++;
+		  return;
+	  }
+	  melody_timer_counter = 0;
       if (melody[melody_pos]==0) {
         noTone(TONE_PIN);
         digitalWrite(TONE_PIN, HIGH);
@@ -127,20 +138,54 @@ class ToneController
         }
       } else {
         char bukv = melody[melody_pos];
-        byte b_pos = 0;
-        switch(bukv) {
-          case 'C': b_pos = 0; break;
-          case 'D': b_pos = 1; break;
-          case 'E': b_pos = 2; break;
-          case 'F': b_pos = 3; break;
-          case 'G': b_pos = 4; break;
-          case 'A': b_pos = 5; break;
-          case 'B': b_pos = 6; break;
-        }
-        melody_pos++;
-        char cifr = melody[melody_pos];
-        byte c_pos = cifr - '0';
-        tone(TONE_PIN, oct_freq[c_pos][b_pos]);
+		if (bukv!='p') {
+			melody_timer_counter_max = 8;
+			byte b_pos = 0;
+			switch(bukv) {
+			  case 'C': b_pos = 0; break;
+			  case 'D': b_pos = 1; break;
+			  case 'E': b_pos = 2; break;
+			  case 'F': b_pos = 3; break;
+			  case 'G': b_pos = 4; break;
+			  case 'A': b_pos = 5; break;
+			  case 'B': b_pos = 6; break;
+			}
+			melody_pos++;
+			char cifr = melody[melody_pos];
+			byte c_pos = cifr - '0';
+			if (c_pos>=sub_level) c_pos-=sub_level; else c_pos=0;
+			unsigned int cfreq = oct_freq[c_pos][b_pos];
+			if (melody[melody_pos+1]=='#') {
+				melody_pos++;
+				cfreq = cfreq * diez_k;
+			}
+			if (melody[melody_pos+1]=='b') {
+				melody_pos++;
+				cfreq = cfreq * bemol_k;
+			}
+			if (melody[melody_pos+1]=='=') {
+				melody_pos+=2;
+				if (melody[melody_pos]==0) {
+				  tone_muted = true;
+				  return;
+				}
+				char pcifr = melody[melody_pos];
+				melody_timer_counter_max = pcifr - '0';
+				if (melody_timer_counter_max>9) melody_timer_counter_max = 9;
+			}
+			tone(TONE_PIN, cfreq);
+		} else {
+			noTone(TONE_PIN);
+			digitalWrite(TONE_PIN, HIGH);
+			melody_pos++;
+			if (melody[melody_pos]==0) {
+			  tone_muted = true;
+			  return;
+			}
+			char pcifr = melody[melody_pos];
+			melody_timer_counter_max = pcifr - '0';
+			if (melody_timer_counter_max>9) melody_timer_counter_max = 9;
+		}
       }
       melody_pos++;
     }
@@ -225,13 +270,20 @@ class ToneController
     void StartMelodyTone(char *cmelody)
     {
       melody = cmelody;
+	  sub_level = 0;
       unsigned int pos;
       unsigned int melody_ctemp = StringHelper::readIntFromString(melody, 0, &pos);
+	  melody_timer_counter = 1;
+	  melody_timer_counter_max = 1;
       if (melody_ctemp) {
-        melody_tempo = 60000 / melody_ctemp;
+        melody_tempo = 7500 / melody_ctemp;
       } else {
-        melody_tempo = 600;
+        melody_tempo = 75;
       }
+	  if (melody[pos]=='-') {
+		pos++;
+		sub_level = StringHelper::readIntFromString(melody, pos, &pos);
+	  }
       if (melody[pos] == ':') {
         pos++;
       }
