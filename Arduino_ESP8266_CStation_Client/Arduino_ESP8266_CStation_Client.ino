@@ -8,6 +8,17 @@
 #include "eeprom_helper.h"
 #include "string_helper.h"
 
+enum StateQueryCode 
+{ 
+  STATE_NONE, 
+  STATE_LED, 
+  STATE_TONE, 
+  STATE_FAN,
+  STATE_LIGHTG4 
+};
+
+unsigned long getState(StateQueryCode state_code);
+
 #define BAUD_RATE 38400
 
 //#define CSTATION_DEBUG
@@ -35,13 +46,6 @@
 #define CONTROL_BTN_PIN 2
 #define CONTROL_BTN_INTERRUPT 0
 #define CONTROL_BTN_INTERRUPT_MODE RISING
-
-byte melody_count = 3;
-char *melody_list[] = {
-  "100:G4,E5,E5,D5,E5,C5,G4,G4,G4,E5,E5,F5,D5,G5,,G5,A4,A4,F5,F5,E5,D5,C5,G4,E5,E5,D5,E5,C5,,G5,A4,A4,F5,F5,E5,D5,C5,G4,E5,E5,D5,E5,C5", 
-  "180:B5b,F5,B5b,F5,B5b,A5,A5,,A5,F5,A5,F5,A5,B5b,B5b,,B5b,F5,B5b,F5,B5b,A5,A5,,A5,F5,A5,F5,A5,B5b,,,B5b,C6=6,p2,C6=3,p1,C6=3,p1,C6=6,p2,C6,C6#=6,p2,C6#=3,p1,C6#=3,p1,C6#=7,p1,C6#=7,p1,C6#,C6,B5b,A5,B5b,B5b,,,B5b,C6=6,p2,C6=3,p1,C6=3,p1,C6=6,p2,C6,C6#=6,p2,C6#=3,p1,C6#=3,p1,C6#=7,p1,C6#=7,p1,C6#,C6,B5b,A5,B5b",
-  "118-2:B6b,F7,D7#,F7,G7#,F7,F7,,B6b,F7,D7#,F7,B7b,F7,F7,,,C8#,C8,B7b,G7#,B7,F7,F7,,,C8#,C8,B7b,G7#,C8,F7,F7,,,B6b,F7,D7#,F7,G7b,F7,F7,,,B6b,F7,D7#,F7,B7b,F7,F7,,,B7b,F7,F7"
-};
 
 #include "indication_controller.h"
 IndicationController *ind_controller;
@@ -96,6 +100,7 @@ void loop()
 {
   lcd_controller->timerProcess();
   tone_controller->timerProcess();
+  ind_controller->timerProcess();
 
   if (config_btn_pressed) {
     DEBUG_WRITELN("Config BTN pressed. Entering configuration mode\r\n");
@@ -182,6 +187,17 @@ bool sendControlsInfo(unsigned connection_id)
   return rok;
 }
 
+unsigned long getState(StateQueryCode state_code)
+{
+  switch(state_code) {
+    case STATE_LED:      return ind_controller->getProgLedState();
+    case STATE_TONE:     return tone_controller->isToneRunning();
+    case STATE_FAN:      return ind_controller->getFanState();
+    case STATE_LIGHTG4:  return ind_controller->getLightG4State();
+  }
+  return 0;
+}
+
 void executeInputMessage(char *input_message)
 {
   char *message;
@@ -205,8 +221,10 @@ void executeInputMessage(char *input_message)
       delay(1000);
     } else if ((param = StringHelper::getMessageParam(message, "STATES_REQUEST=1", true))) {
       String states_str = "DS_STATE={";
-      states_str = states_str + "\"LED\":\""+(ind_controller->getProgLedState() ? "on" : "off")+"\", ";
-      states_str = states_str + "\"TONE\":\""+(tone_controller->isToneRunning() ? "on" : "off")+"\", ";
+      states_str = states_str + "\"LED\":\""+(getState(STATE_LED) ? "on" : "off")+"\", ";
+      states_str = states_str + "\"TONE\":\""+(getState(STATE_TONE) ? "on" : "off")+"\", ";
+      states_str = states_str + "\"FAN\":\""+(getState(STATE_FAN) ? "on" : "off")+"\", ";
+      states_str = states_str + "\"G4_LIGHT\":\""+(getState(STATE_LIGHTG4) ? "on" : "off")+"\", ";
       states_str = states_str + "\"TIME\":\""+String(now())+"\", ";
       states_str = states_str + "\"SYNC_INTERVAL\":\""+String(TIME_SYNC_INTERVAL)+"\", ";
       states_str = states_str + "\"SENDING_INTERVAL\":\""+String(SENDING_INTERVAL)+"\", ";

@@ -260,6 +260,7 @@ bool sensorsSending()
     uint16_t lux = lightMeter.readLightLevel();
     if (send_str.length()>0) send_str = send_str + ",";
     send_str = send_str + "'L':" + String(lux);
+    ind_controller->updateLightLevel(lux);
 
     if (send_str.length()>0) send_str = send_str + ",";
     send_str = send_str + "'R':'" + (digitalRead(HC_PIN) == HIGH ? "yes" : "no") + "'";

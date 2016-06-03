@@ -4,7 +4,7 @@
 #define TONE_PIN 7
 #define MAX_TIMER_PERIOD 1000
 
-unsigned int oct_freq[9][7]= {
+const unsigned oct_freq[9][7]= {
   {16,  18,  21,  22,  25,  28,  31  },
   {33,  37,  41,  44,  49,  55,  62  },
   {65,  73,  82,  87,  98,  110, 123 },
@@ -16,8 +16,15 @@ unsigned int oct_freq[9][7]= {
   {4186,4699,5274,5588,6272,7040,7902}
 };
 
-float diez_k = 1.059463;
-float bemol_k = 0.9438743;
+const float diez_k = 1.059463;
+const float bemol_k = 0.9438743;
+
+byte melody_count = 2;
+char *melody_list[] = {
+  "100:G4,E5,E5,D5,E5,C5,G4,G4,G4,E5,E5,F5,D5,G5,,G5,A4,A4,F5,F5,E5,D5,C5,G4,E5,E5,D5,E5,C5,,G5,A4,A4,F5,F5,E5,D5,C5,G4,E5,E5,D5,E5,C5"
+  /*"180:B5b,F5,B5b,F5,B5b,A5,A5,,A5,F5,A5,F5,A5,B5b,B5b,,B5b,F5,B5b,F5,B5b,A5,A5,,A5,F5,A5,F5,A5,B5b,,,B5b,C6=6,p2,C6=3,p1,C6=3,p1,C6=6,p2,C6,C6#=6,p2,C6#=3,p1,C6#=3,p1,C6#=7,p1,C6#=7,p1,C6#,C6,B5b,A5,B5b,B5b,,,B5b,C6=6,p2,C6=3,p1,C6=3,p1,C6=6,p2,C6,C6#=6,p2,C6#=3,p1,C6#=3,p1,C6#=7,p1,C6#=7,p1,C6#,C6,B5b,A5,B5b",
+  "118-2:B6b,F7,D7#,F7,G7#,F7,F7,,B6b,F7,D7#,F7,B7b,F7,F7,,,C8#,C8,B7b,G7#,B7,F7,F7,,,C8#,C8,B7b,G7#,C8,F7,F7,,,B6b,F7,D7#,F7,G7b,F7,F7,,,B6b,F7,D7#,F7,B7b,F7,F7,,,B7b,F7,F7"*/
+};
 
 class ToneController 
 {
@@ -35,11 +42,11 @@ class ToneController
     volatile bool tone_muted;
     volatile bool tone_is_melody;
     char *melody;
-	int sub_level;
+    int sub_level;
     unsigned int melody_tempo;
     volatile unsigned int melody_pos;
-	volatile byte melody_timer_counter;
-	volatile byte melody_timer_counter_max;
+    volatile byte melody_timer_counter;
+    volatile byte melody_timer_counter_max;
 
     volatile unsigned long timer_counter;
     volatile unsigned long timer_counter_max;
