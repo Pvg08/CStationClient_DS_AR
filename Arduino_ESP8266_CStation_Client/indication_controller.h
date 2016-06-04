@@ -9,17 +9,20 @@
 #define LIGHT_PIN 39
 
 #define LIGHT_AUTO_SKIP_START_HOUR 7
-#define LIGHT_AUTO_SKIP_STOP_HOUR 22
-#define LIGHT_AUTO_MAX_LEVEL 1
+#define LIGHT_AUTO_SKIP_STOP_HOUR 21
+#define LIGHT_AUTO_MAX_LEVEL 10
 #define LIGHT_AUTO_TIMEOUT_LENGTH 30000
+#define LIGHT_AUTO_ON_ADD 67
 
 #define FAN_FIRST_RUN 80
-#define FAN_MIN_PERIOD_OFF_LENGTH 30000
-#define FAN_MAX_PERIOD_OFF_LENGTH 120000
-#define FAN_MIN_PERIOD_ON_LENGTH 36000
-#define FAN_MAX_PERIOD_ON_LENGTH 9000
+#define FAN_MIN_PERIOD_OFF_LENGTH 40000
+#define FAN_MAX_PERIOD_OFF_LENGTH 180000
+#define FAN_MIN_PERIOD_ON_LENGTH 90000
+#define FAN_MAX_PERIOD_ON_LENGTH 15000
+#define FAN_COUNTER_PER_MINUTE_FOR_PERM_ON 9.0
 #define FAN_COUNTER_PER_MINUTE_FOR_MAX 6.0
-#define FAN_COUNTER_PER_MINUTE_FOR_MIN 0.5
+#define FAN_COUNTER_PER_MINUTE_FOR_MIN 1.0
+#define FAN_COUNTER_PER_MINUTE_FOR_PERM_OFF 0.1
 #define FAN_MIN_TIMEOUT_CUT 0.2
 #define FAN_MAX_TIMEOUT_CUT 1.0
 
@@ -178,7 +181,7 @@ class IndicationController
       if (light_need_update) {
         if (timeStatus()!=timeNotSet) {
           byte chour = hour();
-          if ((chour<LIGHT_AUTO_SKIP_START_HOUR || chour>=LIGHT_AUTO_SKIP_STOP_HOUR) && last_light_level<=LIGHT_AUTO_MAX_LEVEL) {
+          if ((chour<LIGHT_AUTO_SKIP_START_HOUR || chour>=LIGHT_AUTO_SKIP_STOP_HOUR) && ((last_light_level<=LIGHT_AUTO_MAX_LEVEL && !light_g4_state) || (last_light_level<=LIGHT_AUTO_MAX_LEVEL+LIGHT_AUTO_ON_ADD && light_g4_state))) {
             setLight(true);
             light_last_time_state = millis();
           }
@@ -191,12 +194,20 @@ class IndicationController
 
     void nextFanState(bool nextstate, unsigned long old_timeout_inc) 
     {
+      DEBUG_WRITE("nextFanState:");DEBUG_WRITELN(fan_increment);
+      
       unsigned long last_fan_curr_timeout = fan_curr_timeout;
       long custom_increment = fan_increment;
       if (light_g4_state) custom_increment-=3;
       if (getState(STATE_TONE)) custom_increment-=3;
       float nfreq = fan_curr_timeout/60000.0;
+      if (nfreq<=0) nfreq = 1;
       nfreq = custom_increment / nfreq;
+      if (!nextstate && nfreq>=FAN_COUNTER_PER_MINUTE_FOR_PERM_ON) {
+        nextstate = true;
+      } else if (nextstate && nfreq<=FAN_COUNTER_PER_MINUTE_FOR_PERM_OFF) {
+        nextstate = false;
+      }
       if (nfreq<FAN_COUNTER_PER_MINUTE_FOR_MIN) nfreq = FAN_COUNTER_PER_MINUTE_FOR_MIN;
       if (nfreq>FAN_COUNTER_PER_MINUTE_FOR_MAX) nfreq = FAN_COUNTER_PER_MINUTE_FOR_MAX;
       nfreq = (nfreq-FAN_COUNTER_PER_MINUTE_FOR_MIN)/(FAN_COUNTER_PER_MINUTE_FOR_MAX - FAN_COUNTER_PER_MINUTE_FOR_MIN);
@@ -214,6 +225,10 @@ class IndicationController
       fan_last_time_state = millis();
       fan_increment = 0;
       setFan(nextstate);
+
+      DEBUG_WRITELN("FAN state changed"); 
+      DEBUG_WRITE("NFREQ:");DEBUG_WRITELN(nfreq);
+      DEBUG_WRITE("Timeout:");DEBUG_WRITELN(fan_curr_timeout);
     }
 
     void updateLightLevel(uint16_t lux)
