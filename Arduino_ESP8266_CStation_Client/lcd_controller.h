@@ -103,7 +103,7 @@ class LCDController
             if (old_hour != BEEP_START_HOUR) {
       				tone_controller->FastToneSignal(800, 1500);
             } else {
-      				tone_controller->StartMelodyToneByIndex(0);
+      				tone_controller->StartMelodyToneByIndex((old_hour % melody_count) + 1);
             }
           }
         }

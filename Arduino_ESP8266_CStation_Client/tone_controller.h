@@ -23,13 +23,22 @@ const unsigned oct_freq[9][7]= {
 const float diez_k = 1.059463;
 const float bemol_k = 0.9438743;
 
-byte melody_count = 3;
+byte melody_count = 12;
 
 const char melody_1[] PROGMEM = "100:G4,E5,E5,D5,E5,C5,G4,G4,G4,E5,E5,F5,D5,G5,,G5,A4,A4,F5,F5,E5,D5,C5,G4,E5,E5,D5,E5,C5,,G5,A4,A4,F5,F5,E5,D5,C5,G4,E5,E5,D5,E5,C5";
 const char melody_2[] PROGMEM = "180:B5b,F5,B5b,F5,B5b,A5,A5,,A5,F5,A5,F5,A5,B5b,B5b,,B5b,F5,B5b,F5,B5b,A5,A5,,A5,F5,A5,F5,A5,B5b,,,B5b,C6=6,p2,C6=3,p1,C6=3,p1,C6=6,p2,C6,C6#=6,p2,C6#=3,p1,C6#=3,p1,C6#=7,p1,C6#=7,p1,C6#,C6,B5b,A5,B5b,B5b,,,B5b,C6=6,p2,C6=3,p1,C6=3,p1,C6=6,p2,C6,C6#=6,p2,C6#=3,p1,C6#=3,p1,C6#=7,p1,C6#=7,p1,C6#,C6,B5b,A5,B5b";
 const char melody_3[] PROGMEM = "118-2:B6b,F7,D7#,F7,G7#,F7,F7,,B6b,F7,D7#,F7,B7b,F7,F7,,,C8#,C8,B7b,G7#,B7,F7,F7,,,C8#,C8,B7b,G7#,C8,F7,F7,,,B6b,F7,D7#,F7,G7b,F7,F7,,,B6b,F7,D7#,F7,B7b,F7,F7,,,B7b,F7,F7";
+const char melody_4[] PROGMEM = "100:G4,G5,G6";
+const char melody_5[] PROGMEM = "100:G4,G4,G3";
+const char melody_6[] PROGMEM = "100:G4,G7,G7";
+const char melody_7[] PROGMEM = "100:G2,G1,G2";
+const char melody_8[] PROGMEM = "100:G2,G3,G7";
+const char melody_9[] PROGMEM = "100:G7,G7,G7";
+const char melody_10[] PROGMEM = "100:G6,G7,G2";
+const char melody_11[] PROGMEM = "100:G5,G4,G5";
+const char melody_12[] PROGMEM = "100:G2,G7,G2";
 
-const char* const melody_list[] PROGMEM = {melody_1, melody_2, melody_3};
+const char* const melody_list[] PROGMEM = {melody_1, melody_2, melody_3, melody_4, melody_5, melody_6, melody_7, melody_8, melody_9, melody_10, melody_11, melody_12};
 
 char melody_buffer[MELODY_MAX_SIZE+1];
 

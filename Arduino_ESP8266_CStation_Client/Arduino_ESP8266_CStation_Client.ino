@@ -65,8 +65,8 @@ const char control_3[] PROGMEM = "DC_INFO={'CODE':'state','PREFIX':'STATES_REQUE
 const char control_4[] PROGMEM = "DC_INFO={'CODE':'reset','PREFIX':'SERV_RST','PARAM':[{'VALUE':1,'SKIP':1}]}";
 const char control_5[] PROGMEM = "DC_INFO={'CODE':'config','PREFIX':'SERV_CONF','PARAM':[{'VALUE':1,'SKIP':1}]}";
 const char control_6[] PROGMEM = "DC_INFO={'CODE':'displaystate','PREFIX':'SET_DISPLAY_ST','PARAM':[{'NAME':'Display state ON','TYPE':'BOOL'}],'BUTTONS':[{'NAME':'Set auto','PARAMSET':['2']}]}";
-const char control_7[] PROGMEM = "DC_INFO={'CODE':'displaystate','PREFIX':'SET_FAN_ST','PARAM':[{'NAME':'Fan state ON','TYPE':'BOOL'}],'BUTTONS':[{'NAME':'Set auto','PARAMSET':['2']}]}";
-const char control_8[] PROGMEM = "DC_INFO={'CODE':'displaystate','PREFIX':'SET_LIGHT_ST','PARAM':[{'NAME':'Light state ON','TYPE':'BOOL'}],'BUTTONS':[{'NAME':'Set auto','PARAMSET':['2']}]}";
+const char control_7[] PROGMEM = "DC_INFO={'CODE':'fanstate','PREFIX':'SET_FAN_ST','PARAM':[{'NAME':'Fan state ON','TYPE':'BOOL'}],'BUTTONS':[{'NAME':'Set auto','PARAMSET':['2']}]}";
+const char control_8[] PROGMEM = "DC_INFO={'CODE':'lightstate','PREFIX':'SET_LIGHT_ST','PARAM':[{'NAME':'Light state ON','TYPE':'BOOL'}],'BUTTONS':[{'NAME':'Set auto','PARAMSET':['2']}]}";
 const char control_9[] PROGMEM = "DC_INFO={'CODE':'settime','PREFIX':'SET_TIME','PARAM':[{'NAME':'Timestamp','TYPE':'TIMESTAMP'}],'BUTTONS':[{'NAME':'Request','PARAMSET':['R']}]}";
 const char control_10[] PROGMEM = "DC_INFO={'CODE':'lcd','PREFIX':'SERV_LT','PARAM':[{'NAME':'Display text','TYPE':'STRING'}],'BUTTONS':[{'NAME':'Reset','PARAMSET':['']}]}";
 const char* const controls_list[] PROGMEM = {control_0, control_1, control_2, control_3, control_4, control_5, control_6, control_7, control_8, control_9, control_10};
@@ -249,6 +249,12 @@ void executeInputMessage(char *input_message)
     } else if ((param = StringHelper::getMessageParam(message, "SET_DISPLAY_ST=", true))) {
       byte new_d_state = StringHelper::readIntFromString(param, 0);
       if (new_d_state<2) lcd_controller->setLCDState(new_d_state!=0); else lcd_controller->setLCDAutoState();
+    } else if ((param = StringHelper::getMessageParam(message, "SET_FAN_ST=", true))) {
+      byte new_d_state = StringHelper::readIntFromString(param, 0);
+      if (new_d_state<2) ind_controller->setFanState(new_d_state!=0); else ind_controller->setFanAutoState();
+    } else if ((param = StringHelper::getMessageParam(message, "SET_LIGHT_ST=", true))) {
+      byte new_d_state = StringHelper::readIntFromString(param, 0);
+      if (new_d_state<2) ind_controller->setLightG4State(new_d_state!=0); else ind_controller->setLightG4AutoState();
     } else if ((param = StringHelper::getMessageParam(message, "SET_TIME=", true))) {
       if (param[0]=='R') {
         time_return_wait = true;

@@ -8,6 +8,9 @@
 #define FAN_PIN 38
 #define LIGHT_PIN 39
 
+#define INDICATION_FAN_STATE_ADDR 21
+#define INDICATION_LIGHT_STATE_ADDR 22
+
 #define LIGHT_AUTO_SKIP_START_HOUR 7
 #define LIGHT_AUTO_SKIP_STOP_HOUR 21
 #define LIGHT_AUTO_MAX_LEVEL 10
@@ -33,17 +36,19 @@ class IndicationController
     volatile bool led_yell_state;
     volatile bool led_red_state;
 
-    volatile bool fan_state;
-    volatile bool light_g4_state;
+    bool fan_state;
+    bool light_g4_state;
+    bool fan_auto_state;
+    bool light_g4_auto_state;
 
     volatile unsigned long int light_last_time_state;
 
-    volatile unsigned int fan_curr_timeout;
-    volatile unsigned long int fan_last_time_state;
+    unsigned int fan_curr_timeout;
+    unsigned long int fan_last_time_state;
     volatile unsigned fan_increment;
 
-    volatile uint16_t last_light_level;
-    volatile bool light_level_initialized;
+    uint16_t last_light_level;
+    bool light_level_initialized;
     volatile bool light_need_update;
 
   public:
@@ -78,6 +83,8 @@ class IndicationController
       setBlue(false);
       setLight(false);
       fan_state = false;
+      fan_auto_state = true;
+      light_g4_auto_state = true;
       fan_curr_timeout = FAN_FIRST_RUN;
       fan_increment = 0;
       fan_last_time_state = 0;
@@ -85,6 +92,15 @@ class IndicationController
       light_last_time_state = 0;
       light_need_update = false;
       light_level_initialized = false;
+
+      EEPROM_Helper::readAutoState(INDICATION_FAN_STATE_ADDR, &fan_auto_state, &fan_state);
+      if (!fan_auto_state) {
+        setFan(fan_state);
+      }
+      EEPROM_Helper::readAutoState(INDICATION_LIGHT_STATE_ADDR, &light_g4_auto_state, &light_g4_state);
+      if (!light_g4_auto_state) {
+        setLight(light_g4_state);
+      }
     }
 
     void setRed(bool state)
@@ -126,6 +142,32 @@ class IndicationController
       return light_g4_state;
     }
 
+    void setFanState(bool ison)
+    {
+      setFan(ison);
+      fan_auto_state = false;
+      EEPROM_Helper::writeAutoState(INDICATION_FAN_STATE_ADDR, fan_auto_state, fan_state);
+    }
+    
+    void setFanAutoState()
+    {
+      fan_auto_state = true;
+      EEPROM_Helper::writeAutoState(INDICATION_FAN_STATE_ADDR, fan_auto_state, fan_state);
+    }
+
+    void setLightG4State(bool ison)
+    {
+      setLight(ison);
+      light_g4_auto_state = false;
+      EEPROM_Helper::writeAutoState(INDICATION_LIGHT_STATE_ADDR, light_g4_auto_state, light_g4_state);
+    }
+    
+    void setLightG4AutoState()
+    {
+      light_g4_auto_state = true;
+      EEPROM_Helper::writeAutoState(INDICATION_LIGHT_STATE_ADDR, light_g4_auto_state, light_g4_state);
+    }
+
     void ConfigState(byte state) {
       setRed(state>0);
       setYellow(state>1);
@@ -154,8 +196,8 @@ class IndicationController
 
     void PresenceState(byte state) {
       if (!led_red_state) setYellow(state>0);
-      fan_increment++;
-      if (timeStatus()!=timeNotSet && light_level_initialized) {
+      if (fan_auto_state) fan_increment++;
+      if (light_g4_auto_state && timeStatus()!=timeNotSet && light_level_initialized) {
         light_need_update = true;
       }
     }
@@ -175,20 +217,22 @@ class IndicationController
     void timerProcess()
     {
       unsigned long int cmilli = millis();
-      if (cmilli>fan_last_time_state && cmilli-fan_last_time_state > fan_curr_timeout) {
+      if (fan_auto_state && cmilli>fan_last_time_state && cmilli-fan_last_time_state > fan_curr_timeout) {
         nextFanState(!fan_state, 0);
       }
-      if (light_need_update) {
-        if (timeStatus()!=timeNotSet) {
-          byte chour = hour();
-          if ((chour<LIGHT_AUTO_SKIP_START_HOUR || chour>=LIGHT_AUTO_SKIP_STOP_HOUR) && ((last_light_level<=LIGHT_AUTO_MAX_LEVEL && !light_g4_state) || (last_light_level<=LIGHT_AUTO_MAX_LEVEL+LIGHT_AUTO_ON_ADD && light_g4_state))) {
-            setLight(true);
-            light_last_time_state = millis();
+      if (light_g4_auto_state) {
+        if (light_need_update) {
+          if (timeStatus()!=timeNotSet) {
+            byte chour = hour();
+            if ((chour<LIGHT_AUTO_SKIP_START_HOUR || chour>=LIGHT_AUTO_SKIP_STOP_HOUR) && ((last_light_level<=LIGHT_AUTO_MAX_LEVEL && !light_g4_state) || (last_light_level<=LIGHT_AUTO_MAX_LEVEL+LIGHT_AUTO_ON_ADD && light_g4_state))) {
+              setLight(true);
+              light_last_time_state = millis();
+            }
           }
+          light_need_update = false;
+        } else if (light_g4_state && cmilli>light_last_time_state && cmilli-light_last_time_state > LIGHT_AUTO_TIMEOUT_LENGTH) {
+          setLight(false);
         }
-        light_need_update = false;
-      } else if (light_g4_state && cmilli>light_last_time_state && cmilli-light_last_time_state > LIGHT_AUTO_TIMEOUT_LENGTH) {
-        setLight(false);
       }
     }
 
