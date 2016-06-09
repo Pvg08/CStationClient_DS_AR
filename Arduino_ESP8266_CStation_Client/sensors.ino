@@ -33,6 +33,22 @@ float oldH;
 bool H_init = false;
 bool MXYZ_init = false;
 
+const byte sensors_count = 13;
+const char sensor_0[] PROGMEM = "DS_INFO={'CODE':'A','NAME':'Activity','TIMEOUT':60,'TYPE':'ENUM','ENUMS':['off','on']}";
+const char sensor_1[] PROGMEM = "DS_INFO={'CODE':'E','NAME':'Errors','TYPE':'INT','MIN':0,'MAX':100000}";
+const char sensor_2[] PROGMEM = "DS_INFO={'CODE':'T','NAME':'Temperature','TYPE':'FLOAT','MIN':-100,'MAX':100,'EM':'°C'}";
+const char sensor_3[] PROGMEM = "DS_INFO={'CODE':'P','NAME':'Pressure','TYPE':'FLOAT','MIN':500,'MAX':1000,'EM':'mm'}";
+const char sensor_4[] PROGMEM = "DS_INFO={'CODE':'H','NAME':'Humidity','TYPE':'FLOAT','MIN':0,'MAX':100,'EM':'%'}";
+const char sensor_5[] PROGMEM = "DS_INFO={'CODE':'L','NAME':'Illuminance','TYPE':'FLOAT','MIN':0,'MAX':200000,'EM':'lux'}";
+const char sensor_6[] PROGMEM = "DS_INFO={'CODE':'R','NAME':'Presence','TIMEOUT':10,'TYPE':'ENUM','ENUMS':['no','yes']}";
+const char sensor_7[] PROGMEM = "DS_INFO={'CODE':'Mx','NAME':'Magnetic field Vector X','TYPE':'FLOAT','MIN':-10000,'MAX':10000,'EM':'deg'}";
+const char sensor_8[] PROGMEM = "DS_INFO={'CODE':'My','NAME':'Magnetic field Vector Y','TYPE':'FLOAT','MIN':-10000,'MAX':10000,'EM':'deg'}";
+const char sensor_9[] PROGMEM = "DS_INFO={'CODE':'Mz','NAME':'Magnetic field Vector Z','TYPE':'FLOAT','MIN':-10000,'MAX':10000,'EM':'deg'}";
+const char sensor_10[] PROGMEM = "DS_INFO={'CODE':'N','NAME':'Noise','TIMEOUT':5,'TYPE':'ENUM','ENUMS':['no','yes']}";
+const char sensor_11[] PROGMEM = "DS_INFO={'CODE':'O','NAME':'Outer signal','TYPE':'ENUM','ENUMS':['no','yes']}";
+const char sensor_12[] PROGMEM = "DS_INFO={'CODE':'B','NAME':'Signal button','TIMEOUT':5,'TYPE':'ENUM','ENUMS':['no','yes']}";
+const char* const sensors_list[] PROGMEM = {sensor_0, sensor_1, sensor_2, sensor_3, sensor_4, sensor_5, sensor_6, sensor_7, sensor_8, sensor_9, sensor_10, sensor_11, sensor_12};
+
 volatile bool hc_info_sended = false;
 volatile bool hc_state = false;
 volatile bool ns_info_sended = false;
@@ -103,60 +119,14 @@ bool sendSensorsInfo(unsigned connection_id)
 {
   char* reply;
   bool rok;
-  
-  reply = sendMessage(connection_id, "DS_INFO={'CODE':'A','NAME':'Activity','TIMEOUT':60,'TYPE':'ENUM','ENUMS':['off','on']}", MAX_ATTEMPTS);
-  rok = StringHelper::replyIsOK(reply);
-  if (!rok) return rok;
+  char bufr[128];
 
-  reply = sendMessage(connection_id, "DS_INFO={'CODE':'E','NAME':'Errors','TYPE':'INT','MIN':0,'MAX':100000}", MAX_ATTEMPTS);
-  rok = StringHelper::replyIsOK(reply);
-  if (!rok) return rok;
-
-  reply = sendMessage(connection_id, "DS_INFO={'CODE':'T','NAME':'Temperature','TYPE':'FLOAT','MIN':-100,'MAX':100,'EM':'°C'}", MAX_ATTEMPTS);
-  rok = StringHelper::replyIsOK(reply);
-  if (!rok) return rok;
-  
-  reply = sendMessage(connection_id, "DS_INFO={'CODE':'P','NAME':'Pressure','TYPE':'FLOAT','MIN':500,'MAX':1000,'EM':'mm'}", MAX_ATTEMPTS);
-  rok = StringHelper::replyIsOK(reply);
-  if (!rok) return rok;
-
-  if (H_init) {
-    reply = sendMessage(connection_id, "DS_INFO={'CODE':'H','NAME':'Humidity','TYPE':'FLOAT','MIN':0,'MAX':100,'EM':'%'}", MAX_ATTEMPTS);
+  for(byte i=0; i<sensors_count; i++) {
+    strlcpy_P(bufr, (char*)pgm_read_word(&(sensors_list[i])), 128);
+    reply = sendMessage(connection_id, bufr, MAX_ATTEMPTS);
     rok = StringHelper::replyIsOK(reply);
     if (!rok) return rok;
   }
-  
-  reply = sendMessage(connection_id, "DS_INFO={'CODE':'L','NAME':'Illuminance','TYPE':'FLOAT','MIN':0,'MAX':200000,'EM':'lux'}", MAX_ATTEMPTS);
-  rok = StringHelper::replyIsOK(reply);
-  if (!rok) return rok;
-  
-  reply = sendMessage(connection_id, "DS_INFO={'CODE':'R','NAME':'Presence','TIMEOUT':10,'TYPE':'ENUM','ENUMS':['no','yes']}", MAX_ATTEMPTS);
-  rok = StringHelper::replyIsOK(reply);
-  if (!rok) return rok;
-
-  if (MXYZ_init) {
-    reply = sendMessage(connection_id, "DS_INFO={'CODE':'Mx','NAME':'Magnetic field Vector X','TYPE':'FLOAT','MIN':-10000,'MAX':10000,'EM':'deg'}", MAX_ATTEMPTS);
-    rok = StringHelper::replyIsOK(reply);
-    if (!rok) return rok;
-    reply = sendMessage(connection_id, "DS_INFO={'CODE':'My','NAME':'Magnetic field Vector Y','TYPE':'FLOAT','MIN':-10000,'MAX':10000,'EM':'deg'}", MAX_ATTEMPTS);
-    rok = StringHelper::replyIsOK(reply);
-    if (!rok) return rok;
-    reply = sendMessage(connection_id, "DS_INFO={'CODE':'Mz','NAME':'Magnetic field Vector Z','TYPE':'FLOAT','MIN':-10000,'MAX':10000,'EM':'deg'}", MAX_ATTEMPTS);
-    rok = StringHelper::replyIsOK(reply);
-    if (!rok) return rok;
-  }
-
-  reply = sendMessage(connection_id, "DS_INFO={'CODE':'N','NAME':'Noise','TIMEOUT':5,'TYPE':'ENUM','ENUMS':['no','yes']}", MAX_ATTEMPTS);
-  rok = StringHelper::replyIsOK(reply);
-  if (!rok) return rok;
-
-  reply = sendMessage(connection_id, "DS_INFO={'CODE':'O','NAME':'Outer signal','TYPE':'ENUM','ENUMS':['no','yes']}", MAX_ATTEMPTS);
-  rok = StringHelper::replyIsOK(reply);
-  if (!rok) return rok;
-
-  reply = sendMessage(connection_id, "DS_INFO={'CODE':'B','NAME':'Signal button','TIMEOUT':5,'TYPE':'ENUM','ENUMS':['no','yes']}", MAX_ATTEMPTS);
-  rok = StringHelper::replyIsOK(reply);
-  if (!rok) return rok;
 
   reply = sendMessage(connection_id, "DS_V={'A':'on'}", MAX_ATTEMPTS);
   rok = StringHelper::replyIsOK(reply);

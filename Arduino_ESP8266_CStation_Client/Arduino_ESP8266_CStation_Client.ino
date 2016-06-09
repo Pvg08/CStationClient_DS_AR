@@ -7,6 +7,7 @@
 #include <LiquidCrystal_I2C.h>
 #include "eeprom_helper.h"
 #include "string_helper.h"
+#include <avr/pgmspace.h>
 
 enum StateQueryCode 
 { 
@@ -55,6 +56,20 @@ ToneController *tone_controller;
 LCDController *lcd_controller;
 
 byte errors_count = 0;
+
+const byte controls_count = 11;
+const char control_0[] PROGMEM = "DC_INFO={'CODE':'tone','PREFIX':'TONE','PARAM':[{'NAME':'Led indication','SKIP':1,'VALUE':'L','TYPE':'BOOL'},{'NAME':'Frequency','TYPE':'UINT','DEFAULT':500},{'NAME':'Period','TYPE':'UINT'}],'BUTTONS':[{'NAME':'Reset','PARAMSET':['0']}]}";
+const char control_1[] PROGMEM = "DC_INFO={'CODE':'melody','PREFIX':'MEL','PARAM':[{'NAME':'Write to buffer','SKIP':1,'VALUE':'B','TYPE':'BOOL'},{'NAME':'Code as index','SKIP':1,'VALUE':'I','TYPE':'BOOL'},{'NAME':'Code','TYPE':'STRING'}],'BUTTONS':[{'NAME':'Reset','PARAMSET':['0']}]}";
+const char control_2[] PROGMEM = "DC_INFO={'CODE':'led','PREFIX':'LED_SET','PARAM':[{'NAME':'Led state','TYPE':'BOOL'}]}";
+const char control_3[] PROGMEM = "DC_INFO={'CODE':'state','PREFIX':'STATES_REQUEST','LISTEN':1,'PARAM':[{'VALUE':1,'SKIP':1}]}";
+const char control_4[] PROGMEM = "DC_INFO={'CODE':'reset','PREFIX':'SERV_RST','PARAM':[{'VALUE':1,'SKIP':1}]}";
+const char control_5[] PROGMEM = "DC_INFO={'CODE':'config','PREFIX':'SERV_CONF','PARAM':[{'VALUE':1,'SKIP':1}]}";
+const char control_6[] PROGMEM = "DC_INFO={'CODE':'displaystate','PREFIX':'SET_DISPLAY_ST','PARAM':[{'NAME':'Display state ON','TYPE':'BOOL'}],'BUTTONS':[{'NAME':'Set auto','PARAMSET':['2']}]}";
+const char control_7[] PROGMEM = "DC_INFO={'CODE':'displaystate','PREFIX':'SET_FAN_ST','PARAM':[{'NAME':'Fan state ON','TYPE':'BOOL'}],'BUTTONS':[{'NAME':'Set auto','PARAMSET':['2']}]}";
+const char control_8[] PROGMEM = "DC_INFO={'CODE':'displaystate','PREFIX':'SET_LIGHT_ST','PARAM':[{'NAME':'Light state ON','TYPE':'BOOL'}],'BUTTONS':[{'NAME':'Set auto','PARAMSET':['2']}]}";
+const char control_9[] PROGMEM = "DC_INFO={'CODE':'settime','PREFIX':'SET_TIME','PARAM':[{'NAME':'Timestamp','TYPE':'TIMESTAMP'}],'BUTTONS':[{'NAME':'Request','PARAMSET':['R']}]}";
+const char control_10[] PROGMEM = "DC_INFO={'CODE':'lcd','PREFIX':'SERV_LT','PARAM':[{'NAME':'Display text','TYPE':'STRING'}],'BUTTONS':[{'NAME':'Reset','PARAMSET':['']}]}";
+const char* const controls_list[] PROGMEM = {control_0, control_1, control_2, control_3, control_4, control_5, control_6, control_7, control_8, control_9, control_10};
 
 volatile bool reset_btn_pressed = false;
 volatile bool config_btn_pressed = false;
@@ -152,38 +167,15 @@ bool sendControlsInfo(unsigned connection_id)
 {
   char* reply;
   bool rok;
-  
-  reply = sendMessage(connection_id, "DC_INFO={'CODE':'tone','PREFIX':'TONE','PARAM':[{'NAME':'Led indication','SKIP':1,'VALUE':'L','TYPE':'BOOL'},{'NAME':'Frequency','TYPE':'UINT','DEFAULT':500},{'NAME':'Period','TYPE':'UINT'}],'BUTTONS':[{'NAME':'Reset','PARAMSET':['0']}]}", MAX_ATTEMPTS);
-  rok = StringHelper::replyIsOK(reply);
-  if (!rok) return rok;
+  char bufr[256];
 
-  reply = sendMessage(connection_id, "DC_INFO={'CODE':'led','PREFIX':'LED_SET','PARAM':[{'NAME':'Led state','TYPE':'BOOL'}]}", MAX_ATTEMPTS);
-  rok = StringHelper::replyIsOK(reply);
-  if (!rok) return rok;
+  for(byte i=0; i<controls_count; i++) {
+    strlcpy_P(bufr, (char*)pgm_read_word(&(controls_list[i])), 256);
+    reply = sendMessage(connection_id, bufr, MAX_ATTEMPTS);
+    rok = StringHelper::replyIsOK(reply);
+    if (!rok) return rok;
+  }
 
-  reply = sendMessage(connection_id, "DC_INFO={'CODE':'state','PREFIX':'STATES_REQUEST','LISTEN':1,'PARAM':[{'VALUE':1,'SKIP':1}]}", MAX_ATTEMPTS);
-  rok = StringHelper::replyIsOK(reply);
-  if (!rok) return rok;
-
-  reply = sendMessage(connection_id, "DC_INFO={'CODE':'reset','PREFIX':'SERV_RST','PARAM':[{'VALUE':1,'SKIP':1}]}", MAX_ATTEMPTS);
-  rok = StringHelper::replyIsOK(reply);
-  if (!rok) return rok;
-
-  reply = sendMessage(connection_id, "DC_INFO={'CODE':'config','PREFIX':'SERV_CONF','PARAM':[{'VALUE':1,'SKIP':1}]}", MAX_ATTEMPTS);
-  rok = StringHelper::replyIsOK(reply);
-  if (!rok) return rok;
-
-  reply = sendMessage(connection_id, "DC_INFO={'CODE':'displaystate','PREFIX':'SET_DISPLAY_ST','PARAM':[{'NAME':'Display state','TYPE':'BOOL'}],'BUTTONS':[{'NAME':'Set auto','PARAMSET':['2']}]}", MAX_ATTEMPTS);
-  rok = StringHelper::replyIsOK(reply);
-  if (!rok) return rok;
-
-  reply = sendMessage(connection_id, "DC_INFO={'CODE':'settime','PREFIX':'SET_TIME','PARAM':[{'NAME':'Timestamp','TYPE':'TIMESTAMP'}],'BUTTONS':[{'NAME':'Request','PARAMSET':['R']}]}", MAX_ATTEMPTS);
-  rok = StringHelper::replyIsOK(reply);
-  if (!rok) return rok;
-
-  reply = sendMessage(connection_id, "DC_INFO={'CODE':'lcd','PREFIX':'SERV_LT','PARAM':[{'NAME':'Display text','TYPE':'STRING'}],'BUTTONS':[{'NAME':'Reset','PARAMSET':['']}]}", MAX_ATTEMPTS);
-  rok = StringHelper::replyIsOK(reply);
-  
   return rok;
 }
 
@@ -244,6 +236,8 @@ void executeInputMessage(char *input_message)
       }
     } else if ((param = StringHelper::getMessageParam(message, "TONE=", true))) {
       tone_controller->RunCommand(param);
+    } else if ((param = StringHelper::getMessageParam(message, "MEL=", true))) {
+      tone_controller->RunMelodyCommand(param);
     } else if ((param = StringHelper::getMessageParam(message, "SERV_LT=", true))) {
       if (param[0]) {
         lcd_controller->setLCDText(param, LCD_PAGE_OUTER);

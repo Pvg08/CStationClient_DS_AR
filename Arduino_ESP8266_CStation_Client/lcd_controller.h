@@ -1,8 +1,10 @@
 #ifndef LCD_CONTROLLER_H
 #define LCD_CONTROLLER_H
 
-#define LCD_I2C_ADDR 0x3F
-//#define LCD_I2C_ADDR 0x27
+//#define LCD_I2C_ADDR 0x3F
+#define LCD_I2C_ADDR 0x27
+
+#define LCD_STATE_ADDR 20
 
 #define LCD_AUTO_TURNOFF_MSTIME 100000
 #define LCD_AUTO_TURNPAGE_MSTIME 7000
@@ -82,6 +84,12 @@ class LCDController
       lcd->home(); 
       lcd->clear(); 
       last_auto_state = last_pager_state = millis();
+
+      EEPROM_Helper::readAutoState(LCD_STATE_ADDR, &lcd_auto_state, &lcd_ison);
+      if (!lcd_auto_state) {
+        setLCDState(lcd_ison);
+      }
+
       showCurrentPage();
     }
 
@@ -95,7 +103,7 @@ class LCDController
             if (old_hour != BEEP_START_HOUR) {
       				tone_controller->FastToneSignal(800, 1500);
             } else {
-      				tone_controller->StartMelodyTone(melody_list[0]);
+      				tone_controller->StartMelodyToneByIndex(0);
             }
           }
         }
@@ -135,12 +143,14 @@ class LCDController
       } else {
         lcd->noBacklight();
       }
+      EEPROM_Helper::writeAutoState(LCD_STATE_ADDR, lcd_auto_state, lcd_ison);
     }
     
     void setLCDAutoState()
     {
       lcd_auto_state = true;
       updateLCDAutoState();
+      EEPROM_Helper::writeAutoState(LCD_STATE_ADDR, lcd_auto_state, lcd_ison);
     }
     
     void updateLCDAutoState()

@@ -4,6 +4,10 @@
 #define TONE_PIN 7
 #define MAX_TIMER_PERIOD 1000
 
+#define MELODY_MAX_SIZE 200
+
+#define CUSTOM_MELODY_ADDR 1024
+
 const unsigned oct_freq[9][7]= {
   {16,  18,  21,  22,  25,  28,  31  },
   {33,  37,  41,  44,  49,  55,  62  },
@@ -19,12 +23,15 @@ const unsigned oct_freq[9][7]= {
 const float diez_k = 1.059463;
 const float bemol_k = 0.9438743;
 
-byte melody_count = 2;
-char *melody_list[] = {
-  "100:G4,E5,E5,D5,E5,C5,G4,G4,G4,E5,E5,F5,D5,G5,,G5,A4,A4,F5,F5,E5,D5,C5,G4,E5,E5,D5,E5,C5,,G5,A4,A4,F5,F5,E5,D5,C5,G4,E5,E5,D5,E5,C5"
-  /*"180:B5b,F5,B5b,F5,B5b,A5,A5,,A5,F5,A5,F5,A5,B5b,B5b,,B5b,F5,B5b,F5,B5b,A5,A5,,A5,F5,A5,F5,A5,B5b,,,B5b,C6=6,p2,C6=3,p1,C6=3,p1,C6=6,p2,C6,C6#=6,p2,C6#=3,p1,C6#=3,p1,C6#=7,p1,C6#=7,p1,C6#,C6,B5b,A5,B5b,B5b,,,B5b,C6=6,p2,C6=3,p1,C6=3,p1,C6=6,p2,C6,C6#=6,p2,C6#=3,p1,C6#=3,p1,C6#=7,p1,C6#=7,p1,C6#,C6,B5b,A5,B5b",
-  "118-2:B6b,F7,D7#,F7,G7#,F7,F7,,B6b,F7,D7#,F7,B7b,F7,F7,,,C8#,C8,B7b,G7#,B7,F7,F7,,,C8#,C8,B7b,G7#,C8,F7,F7,,,B6b,F7,D7#,F7,G7b,F7,F7,,,B6b,F7,D7#,F7,B7b,F7,F7,,,B7b,F7,F7"*/
-};
+byte melody_count = 3;
+
+const char melody_1[] PROGMEM = "100:G4,E5,E5,D5,E5,C5,G4,G4,G4,E5,E5,F5,D5,G5,,G5,A4,A4,F5,F5,E5,D5,C5,G4,E5,E5,D5,E5,C5,,G5,A4,A4,F5,F5,E5,D5,C5,G4,E5,E5,D5,E5,C5";
+const char melody_2[] PROGMEM = "180:B5b,F5,B5b,F5,B5b,A5,A5,,A5,F5,A5,F5,A5,B5b,B5b,,B5b,F5,B5b,F5,B5b,A5,A5,,A5,F5,A5,F5,A5,B5b,,,B5b,C6=6,p2,C6=3,p1,C6=3,p1,C6=6,p2,C6,C6#=6,p2,C6#=3,p1,C6#=3,p1,C6#=7,p1,C6#=7,p1,C6#,C6,B5b,A5,B5b,B5b,,,B5b,C6=6,p2,C6=3,p1,C6=3,p1,C6=6,p2,C6,C6#=6,p2,C6#=3,p1,C6#=3,p1,C6#=7,p1,C6#=7,p1,C6#,C6,B5b,A5,B5b";
+const char melody_3[] PROGMEM = "118-2:B6b,F7,D7#,F7,G7#,F7,F7,,B6b,F7,D7#,F7,B7b,F7,F7,,,C8#,C8,B7b,G7#,B7,F7,F7,,,C8#,C8,B7b,G7#,C8,F7,F7,,,B6b,F7,D7#,F7,G7b,F7,F7,,,B6b,F7,D7#,F7,B7b,F7,F7,,,B7b,F7,F7";
+
+const char* const melody_list[] PROGMEM = {melody_1, melody_2, melody_3};
+
+char melody_buffer[MELODY_MAX_SIZE+1];
 
 class ToneController 
 {
@@ -277,20 +284,20 @@ class ToneController
     void StartMelodyTone(char *cmelody)
     {
       melody = cmelody;
-	  sub_level = 0;
+	    sub_level = 0;
       unsigned int pos;
       unsigned int melody_ctemp = StringHelper::readIntFromString(melody, 0, &pos);
-	  melody_timer_counter = 1;
-	  melody_timer_counter_max = 1;
+  	  melody_timer_counter = 1;
+  	  melody_timer_counter_max = 1;
       if (melody_ctemp) {
         melody_tempo = 7500 / melody_ctemp;
       } else {
         melody_tempo = 75;
       }
-	  if (melody[pos]=='-') {
-		pos++;
-		sub_level = StringHelper::readIntFromString(melody, pos, &pos);
-	  }
+  	  if (melody[pos]=='-') {
+    		pos++;
+    		sub_level = StringHelper::readIntFromString(melody, pos, &pos);
+  	  }
       if (melody[pos] == ':') {
         pos++;
       }
@@ -304,6 +311,16 @@ class ToneController
       tone_is_melody = true;
       ToneMelodyAction();
       StartTonePeriodTimer(melody_tempo);
+    }
+
+    void StartMelodyToneByIndex(byte index) {
+      if (index == 0) {
+        EEPROM_Helper::readStringFromEEPROM(CUSTOM_MELODY_ADDR, melody_buffer, MELODY_MAX_SIZE);
+        StartMelodyTone(melody_buffer);
+      } else if (index <= melody_count) {
+        strlcpy_P(melody_buffer, (char*)pgm_read_word(&(melody_list[index-1])), MELODY_MAX_SIZE);
+        StartMelodyTone(melody_buffer);
+      }
     }
 
     void StartTone(unsigned frequency, unsigned long period)
@@ -379,6 +396,42 @@ class ToneController
         period = StringHelper::readIntFromString(param, String(frequency).length()+1);
       }
       StartTone(frequency, period);
+    }
+
+    void RunMelodyCommand(char* param) 
+    {
+      bool to_buf = false;
+      bool by_index = false;
+      if (param[0] == 'B') {
+        to_buf = true;
+        param++;
+        if (param[0] == ',') param++;
+      }
+      if (param[0] == 'I') {
+        by_index = true;
+        param++;
+        if (param[0] == ',') param++;
+      }
+      if (param[0] == 'B') {
+        to_buf = true;
+        param++;
+        if (param[0] == ',') param++;
+      }
+
+      if (by_index) {
+        unsigned index = StringHelper::readIntFromString(param, 0);
+        StartMelodyToneByIndex(index);
+        if (to_buf) {
+          EEPROM_Helper::writeStringToEEPROM(CUSTOM_MELODY_ADDR, melody_buffer, MELODY_MAX_SIZE);
+        }
+      } else {
+        melody_buffer[0] = 0;
+        strlcpy(melody_buffer, param, MELODY_MAX_SIZE);
+        if (to_buf) {
+          EEPROM_Helper::writeStringToEEPROM(CUSTOM_MELODY_ADDR, melody_buffer, MELODY_MAX_SIZE);
+        }
+        StartMelodyTone(melody_buffer);
+      }
     }
 };
 

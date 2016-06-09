@@ -33,6 +33,20 @@ class EEPROM_Helper
     {
       EEPROM.write(addr, wrbyte);
     }
+
+    static void readAutoState(unsigned addr, bool* is_auto, bool* is_on)
+    {
+      byte saved_state = EEPROM.read(addr);
+      if (saved_state != 1 && saved_state != 2 && saved_state != 3) saved_state = 3;
+      *is_auto = (saved_state==3);
+      if (saved_state!=3) *is_on = (saved_state==2);
+    }
+
+    static byte writeAutoState(unsigned addr, bool is_auto, bool is_on)
+    {
+      byte saved_state = is_auto ? 3 : (is_on ? 2 : 1);
+      EEPROM.write(addr, saved_state);
+    }
 };
 
 #endif
