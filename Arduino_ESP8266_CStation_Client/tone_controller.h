@@ -4,7 +4,7 @@
 #define TONE_PIN 7
 #define MAX_TIMER_PERIOD 1000
 
-#define MELODY_MAX_SIZE 200
+#define MELODY_MAX_SIZE 320
 
 #define CUSTOM_MELODY_ADDR 1024
 
