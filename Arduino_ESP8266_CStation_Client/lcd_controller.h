@@ -1,9 +1,13 @@
 #ifndef LCD_CONTROLLER_H
 #define LCD_CONTROLLER_H
 
-//#define LCD_I2C_ADDR 0x3F
-#define LCD_I2C_ADDR 0x27
+// For yellow screen
+#define LCD_I2C_ADDR 0x3F
+// For blue Screen
+//#define LCD_I2C_ADDR 0x27
 
+#define LCD_HOURLY_BEEP_ADDR 18
+#define LCD_ALARM_HOUR_ADDR 19
 #define LCD_STATE_ADDR 20
 
 #define LCD_AUTO_TURNOFF_MSTIME 100000
@@ -18,6 +22,8 @@
 
 #define BEEP_START_HOUR 6
 #define BEEP_STOP_HOUR 22
+
+#define NO_HOUR 255
 
 class LCDController 
 {
@@ -37,6 +43,9 @@ class LCDController
 
     byte old_hour;
     byte old_minute;
+
+    byte alarm_hour;
+    bool hourly_beep;
 
   public:
     static LCDController *_self_controller;
@@ -85,6 +94,10 @@ class LCDController
       lcd->clear(); 
       last_auto_state = last_pager_state = millis();
 
+      hourly_beep = EEPROM_Helper::readByte(LCD_HOURLY_BEEP_ADDR) == 1;
+      alarm_hour = EEPROM_Helper::readByte(LCD_ALARM_HOUR_ADDR);
+      if (alarm_hour>=24) alarm_hour = NO_HOUR;
+
       EEPROM_Helper::readAutoState(LCD_STATE_ADDR, &lcd_auto_state, &lcd_ison);
       if (!lcd_auto_state) {
         setLCDState(lcd_ison);
@@ -93,18 +106,35 @@ class LCDController
       showCurrentPage();
     }
 
+    void setAlarmHour(byte new_alarm_hour) {
+      alarm_hour = new_alarm_hour;
+      if (alarm_hour>=24) alarm_hour = NO_HOUR;
+      EEPROM_Helper::writeByte(LCD_ALARM_HOUR_ADDR, alarm_hour);
+    }
+
+    void setHourlyBeep(bool ison) {
+      hourly_beep = ison;
+      EEPROM_Helper::writeByte(LCD_HOURLY_BEEP_ADDR, hourly_beep?1:0);
+    }
+
+    byte getAlarmHour() {
+      return alarm_hour;
+    }
+
+    bool getHourlyBeep() {
+      return hourly_beep;
+    }
+
     void timerProcess()
     {
       unsigned long int cmilli = millis();
       if (timeStatus()!=timeNotSet) {
         if (old_hour != hour()) {
           old_hour = hour();
-          if (old_hour >= BEEP_START_HOUR && old_hour <= BEEP_STOP_HOUR) {
-            if (old_hour != BEEP_START_HOUR) {
-      				tone_controller->FastToneSignal(800, 1500);
-            } else {
-      				tone_controller->StartMelodyToneByIndex((old_hour % melody_count) + 1);
-            }
+          if (alarm_hour != NO_HOUR && alarm_hour == old_hour) {
+            tone_controller->StartMelodyToneByIndex(0);
+          } else if (old_hour >= BEEP_START_HOUR && old_hour <= BEEP_STOP_HOUR) {
+      		  tone_controller->StartMelodyToneByIndex((old_hour % melody_count) + 1);
           }
         }
         if (old_minute != minute()) {

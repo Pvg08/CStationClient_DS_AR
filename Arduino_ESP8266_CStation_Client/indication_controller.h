@@ -12,9 +12,9 @@
 #define INDICATION_LIGHT_STATE_ADDR 22
 
 #define LIGHT_AUTO_SKIP_START_HOUR 7
-#define LIGHT_AUTO_SKIP_STOP_HOUR 21
-#define LIGHT_AUTO_MAX_LEVEL 10
-#define LIGHT_AUTO_TIMEOUT_LENGTH 30000
+#define LIGHT_AUTO_SKIP_STOP_HOUR 22
+#define LIGHT_AUTO_MAX_LEVEL 3
+#define LIGHT_AUTO_TIMEOUT_LENGTH 60000
 #define LIGHT_AUTO_ON_ADD 67
 
 #define FAN_FIRST_RUN 80
@@ -22,8 +22,8 @@
 #define FAN_MAX_PERIOD_OFF_LENGTH 180000
 #define FAN_MIN_PERIOD_ON_LENGTH 90000
 #define FAN_MAX_PERIOD_ON_LENGTH 15000
-#define FAN_COUNTER_PER_MINUTE_FOR_PERM_ON 9.0
-#define FAN_COUNTER_PER_MINUTE_FOR_MAX 6.0
+#define FAN_COUNTER_PER_MINUTE_FOR_PERM_ON 12.0
+#define FAN_COUNTER_PER_MINUTE_FOR_MAX 9.0
 #define FAN_COUNTER_PER_MINUTE_FOR_MIN 1.0
 #define FAN_COUNTER_PER_MINUTE_FOR_PERM_OFF 0.1
 #define FAN_MIN_TIMEOUT_CUT 0.2
@@ -45,7 +45,7 @@ class IndicationController
 
     unsigned int fan_curr_timeout;
     unsigned long int fan_last_time_state;
-    volatile unsigned fan_increment;
+    volatile unsigned long fan_increment;
 
     uint16_t last_light_level;
     bool light_level_initialized;
@@ -243,7 +243,8 @@ class IndicationController
       unsigned long last_fan_curr_timeout = fan_curr_timeout;
       long custom_increment = fan_increment;
       if (light_g4_state) custom_increment-=3;
-      if (getState(STATE_TONE)) custom_increment-=3;
+      if (getState(STATE_TONE)) custom_increment-=6;
+      if (custom_increment<0) custom_increment = 0;
       float nfreq = fan_curr_timeout/60000.0;
       if (nfreq<=0) nfreq = 1;
       nfreq = custom_increment / nfreq;
@@ -256,9 +257,9 @@ class IndicationController
       if (nfreq>FAN_COUNTER_PER_MINUTE_FOR_MAX) nfreq = FAN_COUNTER_PER_MINUTE_FOR_MAX;
       nfreq = (nfreq-FAN_COUNTER_PER_MINUTE_FOR_MIN)/(FAN_COUNTER_PER_MINUTE_FOR_MAX - FAN_COUNTER_PER_MINUTE_FOR_MIN);
       if (nextstate) {
-        fan_curr_timeout = round(nfreq * (FAN_MIN_PERIOD_ON_LENGTH - FAN_MAX_PERIOD_ON_LENGTH) + FAN_MAX_PERIOD_ON_LENGTH);
+        fan_curr_timeout = round(nfreq * (FAN_MIN_PERIOD_ON_LENGTH - FAN_MAX_PERIOD_ON_LENGTH)) + FAN_MAX_PERIOD_ON_LENGTH;
       } else {
-        fan_curr_timeout = round(nfreq * (FAN_MAX_PERIOD_OFF_LENGTH - FAN_MIN_PERIOD_OFF_LENGTH) + FAN_MIN_PERIOD_OFF_LENGTH);
+        fan_curr_timeout = round(nfreq * (FAN_MAX_PERIOD_OFF_LENGTH - FAN_MIN_PERIOD_OFF_LENGTH)) + FAN_MIN_PERIOD_OFF_LENGTH;
       }
       if (old_timeout_inc) {
         float old_state_k = 1 - old_timeout_inc / last_fan_curr_timeout;
@@ -267,7 +268,7 @@ class IndicationController
         fan_curr_timeout = round(fan_curr_timeout * old_state_k);
       }
       fan_last_time_state = millis();
-      fan_increment = 0;
+      fan_increment = fan_increment >> 1;
       setFan(nextstate);
 
       DEBUG_WRITELN("FAN state changed"); 

@@ -57,7 +57,7 @@ LCDController *lcd_controller;
 
 byte errors_count = 0;
 
-const byte controls_count = 11;
+const byte controls_count = 12;
 const char control_0[] PROGMEM = "DC_INFO={'CODE':'tone','PREFIX':'TONE','PARAM':[{'NAME':'Led indication','SKIP':1,'VALUE':'L','TYPE':'BOOL'},{'NAME':'Frequency','TYPE':'UINT','DEFAULT':500},{'NAME':'Period','TYPE':'UINT'}],'BUTTONS':[{'NAME':'Reset','PARAMSET':['0']}]}";
 const char control_1[] PROGMEM = "DC_INFO={'CODE':'melody','PREFIX':'MEL','PARAM':[{'NAME':'Write to buffer','SKIP':1,'VALUE':'B','TYPE':'BOOL'},{'NAME':'Code as index','SKIP':1,'VALUE':'I','TYPE':'BOOL'},{'NAME':'Code','TYPE':'STRING'}],'BUTTONS':[{'NAME':'Reset','PARAMSET':['0']}]}";
 const char control_2[] PROGMEM = "DC_INFO={'CODE':'led','PREFIX':'LED_SET','PARAM':[{'NAME':'Led state','TYPE':'BOOL'}]}";
@@ -68,8 +68,9 @@ const char control_6[] PROGMEM = "DC_INFO={'CODE':'displaystate','PREFIX':'SET_D
 const char control_7[] PROGMEM = "DC_INFO={'CODE':'fanstate','PREFIX':'SET_FAN_ST','PARAM':[{'NAME':'Fan state ON','TYPE':'BOOL'}],'BUTTONS':[{'NAME':'Set auto','PARAMSET':['2']}]}";
 const char control_8[] PROGMEM = "DC_INFO={'CODE':'lightstate','PREFIX':'SET_LIGHT_ST','PARAM':[{'NAME':'Light state ON','TYPE':'BOOL'}],'BUTTONS':[{'NAME':'Set auto','PARAMSET':['2']}]}";
 const char control_9[] PROGMEM = "DC_INFO={'CODE':'settime','PREFIX':'SET_TIME','PARAM':[{'NAME':'Timestamp','TYPE':'TIMESTAMP'}],'BUTTONS':[{'NAME':'Request','PARAMSET':['R']}]}";
-const char control_10[] PROGMEM = "DC_INFO={'CODE':'lcd','PREFIX':'SERV_LT','PARAM':[{'NAME':'Display text','TYPE':'STRING'}],'BUTTONS':[{'NAME':'Reset','PARAMSET':['']}]}";
-const char* const controls_list[] PROGMEM = {control_0, control_1, control_2, control_3, control_4, control_5, control_6, control_7, control_8, control_9, control_10};
+const char control_10[] PROGMEM = "DC_INFO={'CODE':'alarmmode','PREFIX':'SET_ALARM','PARAM':[{'NAME':'Hourly beep','TYPE':'BOOL'},{'NAME':'Alarm','TYPE':'BOOL'},{'NAME':'Alarm hour','TYPE':'UINT'}]}";
+const char control_11[] PROGMEM = "DC_INFO={'CODE':'lcd','PREFIX':'SERV_LT','PARAM':[{'NAME':'Display text','TYPE':'STRING'}],'BUTTONS':[{'NAME':'Reset','PARAMSET':['']}]}";
+const char* const controls_list[] PROGMEM = {control_0, control_1, control_2, control_3, control_4, control_5, control_6, control_7, control_8, control_9, control_10, control_11};
 
 volatile bool reset_btn_pressed = false;
 volatile bool config_btn_pressed = false;
@@ -217,6 +218,8 @@ void executeInputMessage(char *input_message)
       states_str = states_str + "\"TONE\":\""+(getState(STATE_TONE) ? "on" : "off")+"\", ";
       states_str = states_str + "\"FAN\":\""+(getState(STATE_FAN) ? "on" : "off")+"\", ";
       states_str = states_str + "\"G4_LIGHT\":\""+(getState(STATE_LIGHTG4) ? "on" : "off")+"\", ";
+      states_str = states_str + "\"ALARM_HOUR\":\""+String(lcd_controller->getAlarmHour())+"\", ";
+      states_str = states_str + "\"BEEP_HOURLY\":\""+(lcd_controller->getHourlyBeep() ? "on" : "off")+"\", ";
       states_str = states_str + "\"TIME\":\""+String(now())+"\", ";
       states_str = states_str + "\"SYNC_INTERVAL\":\""+String(TIME_SYNC_INTERVAL)+"\", ";
       states_str = states_str + "\"SENDING_INTERVAL\":\""+String(SENDING_INTERVAL)+"\", ";
@@ -263,6 +266,16 @@ void executeInputMessage(char *input_message)
         setTime(timestamp);
         lcd_controller->redrawTimePage();
       }
+    } else if ((param = StringHelper::getMessageParam(message, "SET_ALARM=", true))) {
+      bool b0 = param[0]=='1';
+      bool b1 = false;
+      unsigned b2 = 255;
+      if (param[1]==',') param+=2;
+      b1 = param[0]=='1';
+      if (param[1]==',') param+=2;
+      b2 = StringHelper::readIntFromString(param, 0);
+      lcd_controller->setHourlyBeep(b0);
+      if (b1) lcd_controller->setAlarmHour(b2);
     }
     delay (100);
   }
