@@ -134,7 +134,7 @@ class LCDController
           if (alarm_hour != NO_HOUR && alarm_hour == old_hour) {
             tone_controller->StartMelodyToneByIndex(0);
           } else if (old_hour >= BEEP_START_HOUR && old_hour <= BEEP_STOP_HOUR) {
-      		  tone_controller->StartMelodyToneByIndex((old_hour % melody_count) + 1);
+      		  tone_controller->StartMelodyToneByIndex(((old_hour-BEEP_START_HOUR) % melody_count) + 1);
           }
         }
         if (old_minute != minute()) {
