@@ -4,7 +4,7 @@
 #define TONE_PIN 7
 #define MAX_TIMER_PERIOD 1000
 
-#define MELODY_MAX_SIZE 320
+#define MELODY_MAX_SIZE 512
 
 #define CUSTOM_MELODY_ADDR 1024
 
@@ -23,22 +23,27 @@ const unsigned oct_freq[9][7]= {
 const float diez_k = 1.059463;
 const float bemol_k = 0.9438743;
 
-byte melody_count = 12;
+byte melody_count = 17;
 
-const char melody_1[] PROGMEM = "100:G4,E5,E5,D5,E5,C5,G4,G4,G4,E5,E5,F5,D5,G5,,G5,A4,A4,F5,F5,E5,D5,C5,G4,E5,E5,D5,E5,C5,,G5,A4,A4,F5,F5,E5,D5,C5,G4,E5,E5,D5,E5,C5";
-const char melody_2[] PROGMEM = "180:B5b,F5,B5b,F5,B5b,A5,A5,,A5,F5,A5,F5,A5,B5b,B5b,,B5b,F5,B5b,F5,B5b,A5,A5,,A5,F5,A5,F5,A5,B5b,,,B5b,C6=6,p2,C6=3,p1,C6=3,p1,C6=6,p2,C6,C6#=6,p2,C6#=3,p1,C6#=3,p1,C6#=7,p1,C6#=7,p1,C6#,C6,B5b,A5,B5b,B5b,,,B5b,C6=6,p2,C6=3,p1,C6=3,p1,C6=6,p2,C6,C6#=6,p2,C6#=3,p1,C6#=3,p1,C6#=7,p1,C6#=7,p1,C6#,C6,B5b,A5,B5b";
-const char melody_3[] PROGMEM = "118-2:B6b,F7,D7#,F7,G7#,F7,F7,,B6b,F7,D7#,F7,B7b,F7,F7,,,C8#,C8,B7b,G7#,B7,F7,F7,,,C8#,C8,B7b,G7#,C8,F7,F7,,,B6b,F7,D7#,F7,G7b,F7,F7,,,B6b,F7,D7#,F7,B7b,F7,F7,,,B7b,F7,F7";
-const char melody_4[] PROGMEM = "125:F6#=5,p3,E6=3,p1,D6=3,p1,C6#=3,p1,B5=3,p1,B5=5,p8,p3,C6#=3,p1,D6=3,p1,C6#=3,p1,B5=5,p7,F6#=5,p3,E6=3,p1,D6=3,p1,C6#=3,p1,B5=3,p1,B5=5,p8,p3,C6#=3,p1,D6=3,p1,C6#=3,p1,B5=8";
-const char melody_5[] PROGMEM = "120:F6=8,F6=3,p1,F6=4,E6=3,p1,F6=8,F6=3,p1,G6=3,p1,F6=5,p3,E6=1,p3,F6=5,p3,F6=8,F6=3,p1,F6=3,p1,E6=3,p1,F6=8,F6=3,p1,G6=3,p1,F6=5,p3,E6=5,p3,F6=5,p7,F6=8,F6=4,F6=4,E6=3,p1,F6=8,F6=3,p1,G6=3,p1,F6=5,p3,E6=5,p3,F6=5,p8,p3,C6=3,p1,C6=3,p1,B5b=3,p1,A5=3,p1,C6=5";
-const char melody_6[] PROGMEM = "150:E5=4,F5=8,D5=4,E5=8,E5=4,F5=8,D5=8,E5=8,C5=8,B4=8,B4=8,D5=8,D5=8,p8,p8,p4,E5=4,F5=8,D5=8,E5=4,C5=4,D5=8,D5=4,B4=8,B4=4,A4=4,B4=4,C5=8,C5=8,p8,p8,p8,p4,E5=4,F5=8,D5=4,E5=8,E5=4,F5=8,F5=4,D5=4,E5=8,E5=4,C5=4,B4=8,B4=8,D5=8,D5=4,p8,p8,p4,A4=4,F5=8,F5=4,E5=4,E5=8,B4=4,D5=8,D5=8,C5=4,C5=8,B4=4,A4=8,A4=8,A4=4";
-const char melody_7[] PROGMEM = "100:G2,G1,G2";
-const char melody_8[] PROGMEM = "100:G2,G3,G7";
-const char melody_9[] PROGMEM = "100:G7,G7,G7";
-const char melody_10[] PROGMEM = "100:G6,G7,G2";
-const char melody_11[] PROGMEM = "100:G5,G4,G5";
-const char melody_12[] PROGMEM = "100:G2,G7,G2";
+const char melody_1[] PROGMEM = "150:G4,E5,E5,D5,E5,C5,G4,G4,G4,E5,E5,F5,D5,G5,,G5,A4,A4,F5,F5,E5,D5,C5,G4,E5,E5,D5,E5,C5,,G5,A4,A4,F5,F5,E5,D5,C5,G4,E5,E5,D5,E5,C5";
+const char melody_2[] PROGMEM = "220:B5b,F5,B5b,F5,B5b,A5,A5,,A5,F5,A5,F5,A5,B5b,B5b,,B5b,F5,B5b,F5,B5b,A5,A5,,A5,F5,A5,F5,A5,B5b,,,B5b,C6=6,p2,C6=3,p1,C6=3,p1,C6=6,p2,C6,C6#=6,p2,C6#=3,p1,C6#=3,p1,C6#=7,p1,C6#=7,p1,C6#,C6,B5b,A5,B5b,B5b,,,B5b,C6=6,p2,C6=3,p1,C6=3,p1,C6=6,p2,C6,C6#=6,p2,C6#=3,p1,C6#=3,p1,C6#=7,p1,C6#=7,p1,C6#,C6,B5b,A5,B5b";
+const char melody_3[] PROGMEM = "140-2:B6b,F7,D7#,F7,G7#,F7,F7,,B6b,F7,D7#,F7,B7b,F7,F7,,,C8#,C8,B7b,G7#,B7,F7,F7,,,C8#,C8,B7b,G7#,C8,F7,F7,,,B6b,F7,D7#,F7,G7b,F7,F7,,,B6b,F7,D7#,F7,B7b,F7,F7,,,B7b,F7,F7";
+const char melody_4[] PROGMEM = "160:F6#=3,p1,F6#=3,p1,F6#=3,p1,E6=3,p1,D6=3,p1,C6#=3,p1,B5=3,p5,B5=3,p1,B5=3,p1,B5=3,p1,B5b=3,p1,F5#=3,p1,G5=3,p1,F5#=5,p3,F6#=3,p1,F6#=3,p1,F6#=3,p1,E6=3,p1,D6=3,p1,C6#=3,p1,B5=8,B5=3,p1,B5=3,p1,B5=3,p1,B5b=3,p1,F5#=3,p1,G5=3,p1,F5#=5,p3,F6#=3,p1,F6#=3,p1,F6#=3,p1,E6=3,p1,D6=3,p1,C6#=3,p1,B5=3,p5,B5=3,p1,B5=3,p1,B5=3,p1,B5b=3,p1,F5#=3,p1,G5=3,p1,F5#=5,p3,F6#=3,p1,F6#=3,p1,F6#=3,p1,E6=3,p1,D6=3,p1,C6#=3,p1,B5=3,p1,B5=5,p3,B5=3,C6#=5,D6=3,p1,C6#=3,p1,B5=3,p8,p1,F6#=5,p3,E6=3,p1,D6=3,p1,C6#=3,p1,B5=3,p1,B5=5,p8,p3,C6#=3,p1,D6=3,p1,C6#=3,p1,B5=5,p7,F6#=5,p3,E6=3,p1,D6=3,p1,C6#=3,p1,B5=3,p1,B5=5,p8,p3,C6#=3,p1,D6=3,p1,C6#=3,p1,B5=8";
+const char melody_5[] PROGMEM = "200:D5#=6,p8,p8,p8,p2,F5=8,D5#=8,D5=8,p1,C5=4,D5#=5,p8,p8,p8,p7,F5=8,D5#=8,D5=8,p1,C5=4,F5=4,p8,p8,p8,p8,p1,G5=7,F5=8,D5#=8,p1,D5=5,F5=3,p8,p8,p8,p8,p1,G5=7,F5=8,D5#=8,p1,D5=4,D5#=3,p8,p8,p8,p8,F5=8,D5#=8,D5=8,p1,C5=4,D5#=3,p8,p8,p8,p8,p1,F5=7,D5#=8,D5=8,C5=4,D5=4,p8,p8,p8,p4,D5=4,D5#=8,p1,D5=8,C5=8,B4b=4,D5=4";
+const char melody_6[] PROGMEM = "150:E5=4,F5,D5=4,E5,E5=4,F5,D5,E5,C5,B4,B4,D5,D5,,,p4,E5=4,F5,D5,E5=4,C5=4,D5,D5=4,B4,B4=4,A4=4,B4=4,C5,C5,,,,p4,E5=4,F5,D5=4,E5,E5=4,F5,F5=4,D5=4,E5,E5=4,C5=4,B4,B4,D5,D5=4,,,p4,A4=4,F5,F5=4,E5=4,E5,B4=4,D5,D5,C5=4,C5,B4=4,A4,A4,A4=4";
+const char melody_7[] PROGMEM = "180:G4=4,F4=3,p1,F4,,,,A4=4,B4=4,C5#=4,D5=4,E5=3,p2,F5=3,p1,E5=6,p2,D5=2,p2,D5,D5,D5,D5=3,p1,D5=2,p2,D5=4,p1,C5=4,B4b=4,A4=4,G4=4,B4b=7,p1,A4=4,A4,A4=2,p7,G4=4,F4,A4=5,G4,G4=7,p1,D4=4,F4=7,p2,A4=3,p1,A4=6,,p6,G4=4,F4=3,p1,F4,,,,A4=4,B4=4,C5#=4,D5=4,E5=3,p2,F5=3,p1,E5=6,p2,D5=2,p2,D5,D5,D5,D5=3,p1,D5=2,p2,D5=4,p1,C5=4,B4b=4,A4=4,G4=4,B4b=7,p1,A4=4,A4,A4=2,p7,G4=4,F4,A4=5,G4,G4=7,p1,D4=4,F4=7,p2,A4=3,p1,A4=6";
+const char melody_8[] PROGMEM = "160-1:E5=1,p3,A5,A5=2,p2,C6=1,p3,E6=2,p2,F6=1,p3,E6=2,p4,C6=1,p1,A5=4,,E6=2,p2,D6,D6=1,p3,C6=2,p2,B5=2,p2,A5=2,p2,E5=2,,,p2,E5=2,p2,A5,A5=1,p3,C6=1,p3,E6=2,p2,F6=1,p3,E6=2,p4,C6=2,A5=3,,p1,A5=2,p2,E6,E6=2,p2,D6=2,p2,C6=2,p2,B5=2,p2,A5,A5=4,p4,G5=6,p2,C6=5,p2,G5=5,p3,C6=2,p2,D6=2,p3,E6=3,p3,C6=1,p1,C6,C6=1,p3,E6=2,p2,G6,G6=3,F6=3,p2,E6=2,p2,D6=2,p2,E6,E6=3,p1,D6=3,p2,C6=3,p1,B5=2,p2,A5=2,p6,C6=2,p6,E6=2,p2,F6=2,p2,E6=3,p4,C6=1,A5=7,p5,A5=2,p2,E6,E6=2,p2,D6=2,p2,C6=4,B5=2,p2,A5,A5=6";
+const char melody_9[] PROGMEM = "180:A5=3,p1,B5=1,p3,C6=4,A5=1,p3,B5=4,C6=2,p8,p8,p2,B5=4,A5=1,p3,B5=4,C6=2,p8,p8,p2,B5=4,A5=2,p2,C6=2,p2,C6=5,p3,A5,A5=1,p8,p8,p8,p3,A5=4,B5=1,p3,C6=3,p1,A5=1,p3,B5=4,C6=2,p8,p8,p2,B5=4,A5=1,p3,B5=4,C6=2,p8,p8,p2,B5=4,A5=1,p3,C6=1,p3,C6=7,p1,A5,A5=4,p8,p8,A5=4,F6,F6,F6=5,p3,G6=2,F6=2,D6=4,E6,E6,E6,E6=5,p8,p7,F6=3,p1,E6=1,p3,F6=3,p1,E6=1,p3,A5=4,D6,D6,p4,C6=5,p3,B5=5,p3,A5=3,p1,B5=2,p2,C6=3,p1,A5=2,p2,B5=4,C6=3,p8,p8,p1,B5=4,A5=3,p1,C6=1,p3,C6=7,p2,A5=5";
+const char melody_10[] PROGMEM = "180:A5=7,p1,C6=6,p2,A5=2,p2,A5=2,p2,E5=7,p1,A5=8,C6=6,p2,A5=2,p2,A5=2,p2,F5=6,p2,D5=6,p2,F5=6,p2,E5=2,p2,E5=2,p2,C5=7,p1,E5=2,p2,D5=2,p2,C5=2,p2,D5=2,p2,E5=8,E5=5,p3,A5=6,p2,C6=7,p1,A5=2,p2,A5=2,p2,E5=6,p2,A5=7,p1,C6=6,p2,A5=2,p2,A5=1,p3,F5=6,p2,D5=6,p2,F5=6,p2,E5=2,p2,E5=2,p2,C5=6,p2,E5=4,D5=1,p3,C5=1,p3,B4=2,p2,A4=7";
+const char melody_11[] PROGMEM = "145:G5#=4,C6#=4,E6=4,A6=6,G6#=2,G6#=8,p2,G6#=2,F6#=2,E6=2,D6#=4,C6#=4,A6=8,G6#=8,G6#=2,p2,G6#=4,G6=4,G6#=4,A6=6,G6#=2,G6#=8,p2,G6#=2,G6=2,G6#=2,C7#=4,A6=4,G6#=7,p1,F6#=8,,F6#=2,F6#=4,E6=4,D6#=4,C7#=8,C7#=4,B6=4,A6=4,G6#=8,E6=4,D6#=4,C6#=4,B6=4,A6=4,G6#=4,F6#=8,C6#=4,C6=4,C6=4,C6=4,C6=4,C6=4,C6#=2,C6=2,B5b=4,C6=4,C6#=8,C6#=8,C6#=4";
+const char melody_12[] PROGMEM = "160:E6=3,p1,D6=3,p1,C6=3,p1,D6=8,D6=3,p1,E6=2,p2,F6=5,p1,E6=2,D6=3,p1,B5=2,C6=8,C6=7,p7,E6=3,p1,D6=3,p1,C6=2,p2,D6=8,D6=3,C6=3,p2,B5=3,C6=2,p1,B5=5,p1,E5=2,C6=8,C6=6,p8,G6=3,p1,F6=3,p1,E6=3,p1,D6=8,D6=4,p6,F6=1,p1,F6=1,p1,F6=1,p1,E6=3,p1,D6=2,p2,E6=8,E6=5,p8,p8,p2,E5=1,p1,E6=2,D6=2,p1,D6=3,p1,C6=5,p1,B5=3,p1,C6=2,p1,B5=5,p1,A5=2,p1,C6=8,C6=5";
+const char melody_13[] PROGMEM = "160:C6=1,p3,C6=1,p3,C6=1,p3,C6=4,p4,B5=4,p4,D6=8,C6=4,G5#=5,p8,p8,p3,C6=1,p3,C6=1,p3,C6=4,D6#=8,D6=5,p3,D6=8,C6=3,p1,G5=5,p8,p8,p3,G5=1,p3,G5=1,p3,G5=1,p3,G5#=5,p3,G5=5,p3,D6=8,D6=4,B5=4,G5=4,p4,G5=8,F6=6,p2,F6=7,p1,D6#=8,D6=8,C6=2,p2,C6=1,p3,C6=2,p2,C6=1,p3,C6=5,p3,B5=5,p3,D6=8,C6=5,G5#=5,p8,p8,p3,C6=1,p3,C6=1,p3,C6=1,p3,D6#=5,p3,D6=5,p3,D6=8,C6=4,G5=5,p8,p8,p3,G5=1,p3,G5=1,p3,G5=1,p3,G5#=5,p3,G5=5,p3,D6=8,D6=4,B5=4,G5=4,p4,G5=8,F6=5,p3,F6=8,D6#=8,D6=8,C6=4";
+const char melody_14[] PROGMEM = "160:F6#=2,p2,F6#=2,p2,F6#=2,p2,F6#=4,p1,B6=4,p3,B6=5,p2,B6=2,p3,B6=2,p2,B6=2,p2,B6=4,p1,B6b=3,p8,p4,F6#=2,p2,F6#=2,p2,F6#=2,p2,F6#=5,p1,C7#=4,p2,C7#=6,p2,C7#=3,p1,D7=3,p1,C7#=3,p2,B6=5,p8,p7,F6#=2,p1,F6#=2,p2,F6#=2,p2,F6#=4,p2,B6=4,p3,B6=6,p2,B6=2,p2,B6=2,p3,B6=2,p2,B6=5,B6b=3,p8,p4,F6#=2,p2,F6#=2,p2,F6#=2,p2,F6#=5,p1,C7#=3,p3,C7#=4,p4,C7#=4,D7=4,p1,C7#=3,p1,B6=5";
+const char melody_15[] PROGMEM = "260:C4=3,C4=4,p1,A3=2,C4=3,p5,C4=3,p8,p2,C4=3,C4=5,A3=2,C4#=3,p4,C4#=3,p8,p3,C4#=3,C4#=4,p1,A3=2,p1,D4=3,p5,D4=3,p4,C4=3,p5,B3b=4,p1,A3=7,p8,p8,p1,A3=3,p1,B3b=4,p1,C4=3,D4=4,p4,D4=5,p8,D3=3,E3=5,F3=4,A3=4,p4,A3=4,p4,G3=4,p1,A3=5,p4,C4=7,p8,p4,E4=4,p1,E4=5,p3,C4=5,p8,p8,p2,C4=2,C4=4,p1,A3=3,C4=4,p4,C4=3,p8,p2,C4=2,p1,C4=4,p1,A3=3,C4#=4,p5,C4#=3,p8,p2,C4#=2,p1,C4#=4,A3=2,D4=3,p5,D4=3,p4,C4=3,p5,B3b=4,p1,A3=8,p8,p8,A3=3,B3b=5,C4=3,D4=4,p4,D4=4,p4,D3=6,E3=5,F3=4,p1,A3=5,p3,A3=4,p4,A3=6,G3#=3,G3=5,F3=7";
+const char melody_16[] PROGMEM = "200-2:A6=6,p2,A6=2,p2,A6=2,p2,G6#=6,p2,A6=6,p2,C7=6,p2,B6b=8,B6b=4,p4,A6=6,p2,G6=6,p2,G6=2,p2,G6=2,p2,B6b=6,p2,A6=6,p2,G6=6,p2,F6=8,F6=2,p6,E6=6,p2,D6=6,p2,D6=4,p4,D6=8,C6=4,B5b=4,D6=6,p2,D6=6,p2,D6=8,E6=4,F6=4,G6=8,G6=8,G6=8,G6=8,p8,F6=8,E6=8,D6=4,C6=4,F6=6,p2,F6=6";
+const char melody_17[] PROGMEM = "180-1:G6=4,C7=5,B6=2,C7=6,B6=2,A6=8,p4,G6=4,A6=6,G6#=2,A6=6,E6=2,F6=8,p4,G6=4,B6=6,B6b=2,B6=6,A6=2,G6=8,p4,G6#=4,A6=6,G6#=2,A6=6,F6=2,E6=8,p6,G6=2,C7=6,B6=2,C7=6,B6=2,A6=8,p6,G6=2,A6=2,p2,G6=2,p2,F6=2,p2,E6=2,p2,D6=8,p6,A6=1,p1,A6=2,p2,A6=2,p2,B6=2,p2,A6=3,p1,G6=6,p2,A6=2,p2,G6=3,p1,F6=6,p2,B5=6,p2,G6=8,p6,A6=1,p1,A6=2,p2,A6=2,p2,B6=2,p2,A6=3,p1,G6=6,p2,B6=2,p2,C7=2,p2,B6=6,p2,G6=6,p2,C7=8";
 
-const char* const melody_list[] PROGMEM = {melody_1, melody_2, melody_3, melody_4, melody_5, melody_6, melody_7, melody_8, melody_9, melody_10, melody_11, melody_12};
+const char* const melody_list[] PROGMEM = {melody_1, melody_2, melody_3, melody_4, melody_5, melody_6, melody_7, melody_8, melody_9, melody_10, melody_11, melody_12, melody_13, melody_14, melody_15, melody_16, melody_17};
 
 char melody_buffer[MELODY_MAX_SIZE+1];
 
