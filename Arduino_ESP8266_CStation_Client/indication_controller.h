@@ -21,11 +21,11 @@
 #define FAN_MIN_PERIOD_OFF_LENGTH 40000
 #define FAN_MAX_PERIOD_OFF_LENGTH 180000
 #define FAN_MIN_PERIOD_ON_LENGTH 90000
-#define FAN_MAX_PERIOD_ON_LENGTH 15000
-#define FAN_COUNTER_PER_MINUTE_FOR_PERM_ON 12.0
-#define FAN_COUNTER_PER_MINUTE_FOR_MAX 9.0
-#define FAN_COUNTER_PER_MINUTE_FOR_MIN 1.0
-#define FAN_COUNTER_PER_MINUTE_FOR_PERM_OFF 0.1
+#define FAN_MAX_PERIOD_ON_LENGTH 25000
+#define FAN_COUNTER_PER_MINUTE_FOR_PERM_ON 10.0
+#define FAN_COUNTER_PER_MINUTE_FOR_MAX 8.0
+#define FAN_COUNTER_PER_MINUTE_FOR_MIN 2.0
+#define FAN_COUNTER_PER_MINUTE_FOR_PERM_OFF 0.9
 #define FAN_MIN_TIMEOUT_CUT 0.2
 #define FAN_MAX_TIMEOUT_CUT 1.0
 
@@ -268,7 +268,7 @@ class IndicationController
         fan_curr_timeout = round(fan_curr_timeout * old_state_k);
       }
       fan_last_time_state = millis();
-      fan_increment = fan_increment >> 1;
+      fan_increment = floor(fan_increment*0.75);
       setFan(nextstate);
 
       DEBUG_WRITELN("FAN state changed"); 
