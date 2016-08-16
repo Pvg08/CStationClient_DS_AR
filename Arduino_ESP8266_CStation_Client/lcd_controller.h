@@ -1,11 +1,12 @@
 #ifndef LCD_CONTROLLER_H
 #define LCD_CONTROLLER_H
 
-// For yellow screen
+// Default addr for yellow screen
 #define LCD_I2C_ADDR 0x3F
-// For blue Screen
+// Default addr for blue Screen
 //#define LCD_I2C_ADDR 0x27
 
+#define LCD_I2C_ADDR_ADDR 17
 #define LCD_HOURLY_BEEP_ADDR 18
 #define LCD_ALARM_HOUR_ADDR 19
 #define LCD_STATE_ADDR 20
@@ -29,6 +30,7 @@ class LCDController
 {
   private:
     LiquidCrystal_I2C *lcd;
+    byte lcd_addr;
     
     bool fixed_page;
     bool lcd_auto_state;
@@ -72,8 +74,31 @@ class LCDController
       last_auto_state = 0;
       last_pager_state = 0;
       old_hour = 255;
-      lcd = new LiquidCrystal_I2C(LCD_I2C_ADDR, 16, 2);
+      lcd_addr = EEPROM_Helper::readByte(LCD_I2C_ADDR_ADDR);
+      if (!lcd_addr || lcd_addr==0xFF) {
+        lcd_addr = LCD_I2C_ADDR;
+        EEPROM_Helper::writeByte(LCD_I2C_ADDR_ADDR, lcd_addr);
+      }
+      lcd = new LiquidCrystal_I2C(lcd_addr, 16, 2);
       initLCD();
+    }
+
+    void changeLCDI2CAddr(byte new_lcd_addr)
+    {
+      if (!lcd_addr || lcd_addr==0xFF) return;
+      lcd->clear();
+      delete lcd;
+      lcd_addr = new_lcd_addr;
+      EEPROM_Helper::writeByte(LCD_ALARM_HOUR_ADDR, lcd_addr);
+      lcd = new LiquidCrystal_I2C(lcd_addr, 16, 2);
+      lcd->init();
+      lcd->backlight();
+      lcd->home(); 
+      lcd->clear(); 
+      if (!lcd_auto_state) {
+        setLCDState(lcd_ison);
+      }
+      showCurrentPage();
     }
 
     void initLCD()
@@ -134,7 +159,7 @@ class LCDController
           if (alarm_hour != NO_HOUR && alarm_hour == old_hour) {
             tone_controller->StartMelodyToneByIndex(0);
           } else if (old_hour >= BEEP_START_HOUR && old_hour <= BEEP_STOP_HOUR) {
-      		  tone_controller->StartMelodyToneByIndex((old_hour % melody_count) + 1);
+      		  tone_controller->StartMelodyToneByIndex(((old_hour - BEEP_START_HOUR) % melody_count) + 1);
           }
         }
         if (old_minute != minute()) {

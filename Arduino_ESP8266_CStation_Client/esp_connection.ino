@@ -212,9 +212,13 @@ void StartConfiguringMode()
           EEPROM_Helper::writeStringToEEPROM(EEPROM_START_ADDR+WIFI_SSID_MAXLEN+WIFI_PASSWORD_MAXLEN+3, server_ip_addr, WIFI_SERVER_ADDRESS_MAXLEN);
           DEBUG_WRITE("Server address written to EEPROM:"); DEBUG_WRITELN(server_ip_addr);
           
-          station_id = StringHelper::StringHelper::readIntFromString(param, line_pos);
+          station_id = StringHelper::readIntFromString(param, line_pos, &line_pos);
           EEPROM_Helper::writeByte(EEPROM_START_ADDR, station_id);
           DEBUG_WRITE("Station ID written to EEPROM:"); DEBUG_WRITELN(station_id);
+
+          byte i2c_addr = StringHelper::readIntFromString(param, line_pos);
+          lcd_controller->changeLCDI2CAddr(i2c_addr);
+          DEBUG_WRITE("I2C addr written to EEPROM:"); DEBUG_WRITELN(i2c_addr);
 
           tone_controller->FastToneSignal(1000, 2000);
           break;
