@@ -118,6 +118,14 @@ class IndicationController
       led_blue_state = state;
       digitalWrite(LED_BLUE_PIN, state ? HIGH : LOW);
     }
+	void toggleBlue()
+	{
+		setBlue(!led_blue_state);
+	}
+	void toggleLight()
+	{
+		setLight(!light_g4_state);
+	}
     void setLight(bool state)
     {
       light_g4_state = state;
