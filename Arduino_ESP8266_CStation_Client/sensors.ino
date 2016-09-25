@@ -62,6 +62,7 @@ void HC_State_Changed()
   if (hc_state) {
     hc_info_sended = false;
     ON_PresenceDetected();
+	guard_controller->fixPresence();
     ind_controller->PresenceState(hc_state);
   }
 }

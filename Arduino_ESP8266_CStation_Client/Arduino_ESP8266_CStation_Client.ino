@@ -1,6 +1,6 @@
-
 #include "Arduino.h"
 #include <EEPROM.h>
+#include <Timer1.h>
 #include <Timer5.h>
 #include <Time.h>
 #include <Wire.h>
@@ -54,6 +54,8 @@ IndicationController *ind_controller;
 ToneController *tone_controller;
 #include "lcd_controller.h"
 LCDController *lcd_controller;
+#include "guard_controller.h"
+GuardController *guard_controller;
 
 byte errors_count = 0;
 
@@ -73,6 +75,7 @@ const char control_11[] PROGMEM = "DC_INFO={'CODE':'lcd','PREFIX':'SERV_LT','PAR
 const char* const controls_list[] PROGMEM = {control_0, control_1, control_2, control_3, control_4, control_5, control_6, control_7, control_8, control_9, control_10, control_11};
 
 volatile bool reset_btn_pressed = false;
+volatile bool reset_btn_long_pressed = false;
 volatile bool config_btn_pressed = false;
 volatile bool signal_btn_pressed = false;
 volatile bool signal_btn_sended = false;
@@ -101,10 +104,12 @@ void setup()
   lcd_controller->initLCD();
   ind_controller = IndicationController::Instance();
   tone_controller = ToneController::Instance();
+  guard_controller = GuardController::Instance();
   initESP();
   initSensors();
   DEBUG_WRITELN("Starting...\r\n");
-  reset_btn_pressed = true;
+  reset_btn_pressed = false;
+  reset_btn_long_pressed = true;
   config_btn_pressed = false;
   signal_btn_pressed = false;
   signal_btn_sended = true;
@@ -114,6 +119,7 @@ void setup()
 
 void loop()
 {
+  guard_controller->timerProcess(reset_btn_pressed);
   lcd_controller->timerProcess();
   tone_controller->timerProcess();
   ind_controller->timerProcess();
@@ -122,15 +128,20 @@ void loop()
     DEBUG_WRITELN("Config BTN pressed. Entering configuration mode\r\n");
     StartConfiguringMode();
     config_btn_pressed = false;
-    reset_btn_pressed = true;
+    reset_btn_pressed = false;
+    reset_btn_long_pressed = true;
     signal_btn_pressed = false;
     signal_btn_sended = true;
     return;
   }
   if (reset_btn_pressed) {
+	reset_btn_pressed = false;
+  }
+  if (reset_btn_long_pressed) {
     DEBUG_WRITELN("Reset initiated. Resetting...\r\n");
     StartConnection(true);
     reset_btn_pressed = false;
+    reset_btn_long_pressed = false;
     config_btn_pressed = false;
     signal_btn_pressed = false;
     signal_btn_sended = true;
@@ -197,7 +208,7 @@ void executeInputMessage(char *input_message)
   unsigned connection_id = 0;
   message = readTCPMessage( 1000, &connection_id, true, input_message);
 
-  if (message && !config_btn_pressed && !reset_btn_pressed) {
+  if (message && !config_btn_pressed && !reset_btn_pressed && !reset_btn_long_pressed) {
     DEBUG_WRITELN("Query found. Executing...");
 
     char* param;
@@ -205,11 +216,13 @@ void executeInputMessage(char *input_message)
     {
       StartConnection(true);
       reset_btn_pressed = false;
+      reset_btn_long_pressed = false;
       config_btn_pressed = false;
       delay(1000);
     } else if ((param = StringHelper::getMessageParam(message, "SERV_CONF=1", true))) {
       StartConfiguringMode();
       reset_btn_pressed = false;
+      reset_btn_long_pressed = false;
       config_btn_pressed = false;
       delay(1000);
     } else if ((param = StringHelper::getMessageParam(message, "STATES_REQUEST=1", true))) {
