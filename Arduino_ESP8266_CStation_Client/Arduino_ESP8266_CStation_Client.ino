@@ -59,7 +59,7 @@ GuardController *guard_controller;
 
 byte errors_count = 0;
 
-const byte controls_count = 12;
+const byte controls_count = 13;
 const char control_0[] PROGMEM = "DC_INFO={'CODE':'tone','PREFIX':'TONE','PARAM':[{'NAME':'Led indication','SKIP':1,'VALUE':'L','TYPE':'BOOL'},{'NAME':'Frequency','TYPE':'UINT','DEFAULT':500},{'NAME':'Period','TYPE':'UINT'}],'BUTTONS':[{'NAME':'Reset','PARAMSET':['0']}]}";
 const char control_1[] PROGMEM = "DC_INFO={'CODE':'melody','PREFIX':'MEL','PARAM':[{'NAME':'Write to buffer','SKIP':1,'VALUE':'B','TYPE':'BOOL'},{'NAME':'Code as index','SKIP':1,'VALUE':'I','TYPE':'BOOL'},{'NAME':'Code','TYPE':'STRING'}],'BUTTONS':[{'NAME':'Reset','PARAMSET':['0']}]}";
 const char control_2[] PROGMEM = "DC_INFO={'CODE':'led','PREFIX':'LED_SET','PARAM':[{'NAME':'Led state','TYPE':'BOOL'}]}";
@@ -72,7 +72,8 @@ const char control_8[] PROGMEM = "DC_INFO={'CODE':'lightstate','PREFIX':'SET_LIG
 const char control_9[] PROGMEM = "DC_INFO={'CODE':'settime','PREFIX':'SET_TIME','PARAM':[{'NAME':'Timestamp','TYPE':'TIMESTAMP'}],'BUTTONS':[{'NAME':'Request','PARAMSET':['R']}]}";
 const char control_10[] PROGMEM = "DC_INFO={'CODE':'alarmmode','PREFIX':'SET_ALARM','PARAM':[{'NAME':'Hourly beep','TYPE':'BOOL'},{'NAME':'Alarm','TYPE':'BOOL'},{'NAME':'Alarm hour','TYPE':'UINT'}]}";
 const char control_11[] PROGMEM = "DC_INFO={'CODE':'lcd','PREFIX':'SERV_LT','PARAM':[{'NAME':'Display text','TYPE':'STRING'}],'BUTTONS':[{'NAME':'Reset','PARAMSET':['']}]}";
-const char* const controls_list[] PROGMEM = {control_0, control_1, control_2, control_3, control_4, control_5, control_6, control_7, control_8, control_9, control_10, control_11};
+const char control_12[] PROGMEM = "DC_INFO={'CODE':'setforecast','PREFIX':'SET_FORECAST','PARAM':[{'NAME':'Forecast','TYPE':'STRING'}],'BUTTONS':[{'NAME':'Request','PARAMSET':['R']}]}";
+const char* const controls_list[] PROGMEM = {control_0, control_1, control_2, control_3, control_4, control_5, control_6, control_7, control_8, control_9, control_10, control_11, control_12};
 
 volatile bool reset_btn_pressed = false;
 volatile bool reset_btn_long_pressed = false;
@@ -81,6 +82,7 @@ volatile bool signal_btn_pressed = false;
 volatile bool signal_btn_sended = false;
 volatile bool need_auto_state_lcd_update = false;
 volatile bool time_return_wait = true;
+volatile bool forecast_return_wait = true;
 
 time_t time_sync_provider()
 {
@@ -115,6 +117,7 @@ void setup()
   signal_btn_sended = true;
   need_auto_state_lcd_update = false;
   time_return_wait = true;
+  forecast_return_wait = true;
 }
 
 void loop()
@@ -160,6 +163,14 @@ void loop()
     delay(100);
     if (sendTimeRequestSignal()) {
       delay(500);
+      executeCommands();
+    }
+  }
+  if (forecast_return_wait) {
+    forecast_return_wait = false;
+    delay(100);
+    if (sendForecastRequestSignal()) {
+      delay(1200);
       executeCommands();
     }
   }
@@ -278,6 +289,12 @@ void executeInputMessage(char *input_message)
         time_t timestamp = StringHelper::readIntFromString(param, 0);
         setTime(timestamp);
         lcd_controller->redrawTimePage();
+      }
+    }  else if ((param = StringHelper::getMessageParam(message, "SET_FORECAST=", true))) {
+      if (param[0]=='R') {
+        forecast_return_wait = true;
+      } else {
+        lcd_controller->setLCDText(param, LCD_PAGE_FORECAST);
       }
     } else if ((param = StringHelper::getMessageParam(message, "SET_ALARM=", true))) {
       bool b0 = param[0]=='1';
