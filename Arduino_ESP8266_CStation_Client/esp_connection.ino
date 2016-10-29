@@ -415,6 +415,11 @@ bool sendTimeRequestSignal()
   char* reply = sendMessage(connection_id, "DS_GETTIME=1", MAX_ATTEMPTS);
   return StringHelper::replyIsOK(reply);
 }
+bool sendForecastRequestSignal()
+{
+  char* reply = sendMessage(connection_id, "DS_GETFORECAST=1", MAX_ATTEMPTS);
+  return StringHelper::replyIsOK(reply);
+}
 
 bool startServer(unsigned connection, unsigned port)
 {
