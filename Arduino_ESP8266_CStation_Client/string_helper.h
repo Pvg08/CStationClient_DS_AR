@@ -77,6 +77,18 @@ class StringHelper
       }
       return foundOK;
     }
+	
+	static void degStrConvert(char *str)
+	{
+		int i;
+        int str_len = strlen(str);
+        for (i=0; i<str_len-1; i++)
+        {
+          if ( (str[i]=='*') && (str[i+1]=='C') ) { 
+            str[i] = '\337';
+          }
+        }
+	}
 };
 
 #endif
