@@ -143,7 +143,10 @@ void loop()
     return;
   }
   if (reset_btn_pressed) {
-	reset_btn_pressed = false;
+    reset_btn_pressed = false;
+    tone_controller->StopTone();
+    lcd_controller->unfixPage();
+    lcd_controller->clearLCDText(LCD_PAGE_OUTER);
   }
   if (reset_btn_long_pressed) {
     DEBUG_WRITELN("Reset initiated. Resetting...\r\n");
@@ -177,7 +180,7 @@ void loop()
   if (forecast_return_wait) {
     forecast_return_wait = false;
     delay(100);
-	last_forecast_uptime = millis();
+    last_forecast_uptime = millis();
     if (sendForecastRequestSignal()) {
       delay(1200);
       executeCommands();
@@ -224,100 +227,109 @@ unsigned long getState(StateQueryCode state_code)
 
 void executeInputMessage(char *input_message)
 {
-  char *message;
+  char *messages;
   unsigned connection_id = 0;
-  message = readTCPMessage( 1000, &connection_id, true, input_message);
+  messages = readTCPMessage( 1000, &connection_id, true, input_message);
 
-  if (message && !config_btn_pressed && !reset_btn_pressed && !reset_btn_long_pressed) {
+  if (messages && !config_btn_pressed && !reset_btn_pressed && !reset_btn_long_pressed) {
     DEBUG_WRITELN("Query found. Executing...");
-
     char* param;
-    if ((param = StringHelper::getMessageParam(message, "SERV_RST=1", true))) 
-    {
-      StartConnection(true);
-      reset_btn_pressed = false;
-      reset_btn_long_pressed = false;
-      config_btn_pressed = false;
-      delay(1000);
-    } else if ((param = StringHelper::getMessageParam(message, "SERV_CONF=1", true))) {
-      StartConfiguringMode();
-      reset_btn_pressed = false;
-      reset_btn_long_pressed = false;
-      config_btn_pressed = false;
-      delay(1000);
-    } else if ((param = StringHelper::getMessageParam(message, "STATES_REQUEST=1", true))) {
-      String states_str = "DS_STATE={";
-      states_str = states_str + "\"LED\":\""+(getState(STATE_LED) ? "on" : "off")+"\", ";
-      states_str = states_str + "\"TONE\":\""+(getState(STATE_TONE) ? "on" : "off")+"\", ";
-      states_str = states_str + "\"FAN\":\""+(getState(STATE_FAN) ? "on" : "off")+"\", ";
-      states_str = states_str + "\"G4_LIGHT\":\""+(getState(STATE_LIGHTG4) ? "on" : "off")+"\", ";
-      states_str = states_str + "\"ALARM_HOUR\":\""+String(lcd_controller->getAlarmHour())+"\", ";
-      states_str = states_str + "\"BEEP_HOURLY\":\""+(lcd_controller->getHourlyBeep() ? "on" : "off")+"\", ";
-      states_str = states_str + "\"TIME\":\""+String(now())+"\", ";
-      states_str = states_str + "\"SYNC_INTERVAL\":\""+String(TIME_SYNC_INTERVAL)+"\", ";
-      states_str = states_str + "\"SENDING_INTERVAL\":\""+String(SENDING_INTERVAL)+"\", ";
-      states_str = states_str + "\"ERROR_CHECK_INTERVAL\":\""+String(ERROR_CHECK_INTERVAL)+"\", ";
-      states_str = states_str + "\"TIME_STATUS\":\""+String(timeStatus())+"\"";
-      states_str += "}";
-      delay(50);
-      sendMessage(connection_id, states_str, MAX_ATTEMPTS);
-      delay(100);
-    } else if ((param = StringHelper::getMessageParam(message, "LED_SET=", true))) {
-      byte led_s = StringHelper::readIntFromString(param, 0);
-      tone_controller->setLedControl(false);
-      if (led_s) {
-        ind_controller->SetProgLedState(1);
-      } else {
-        ind_controller->SetProgLedState(0);
+    char* message;
+    char* fpos = messages-1;
+
+    do {
+      message = fpos + 1;
+      fpos = (char*) memchr(message, '\n', strlen(message));
+      if (fpos != NULL) *fpos = 0;
+
+      if ((param = StringHelper::getMessageParam(message, "SERV_RST=1", true))) 
+      {
+        StartConnection(true);
+        reset_btn_pressed = false;
+        reset_btn_long_pressed = false;
+        config_btn_pressed = false;
+        delay(1000);
+      } else if ((param = StringHelper::getMessageParam(message, "SERV_CONF=1", true))) {
+        StartConfiguringMode();
+        reset_btn_pressed = false;
+        reset_btn_long_pressed = false;
+        config_btn_pressed = false;
+        delay(1000);
+      } else if ((param = StringHelper::getMessageParam(message, "STATES_REQUEST=1", true))) {
+        String states_str = "DS_STATE={";
+        states_str = states_str + "\"LED\":\""+(getState(STATE_LED) ? "on" : "off")+"\", ";
+        states_str = states_str + "\"TONE\":\""+(getState(STATE_TONE) ? "on" : "off")+"\", ";
+        states_str = states_str + "\"FAN\":\""+(getState(STATE_FAN) ? "on" : "off")+"\", ";
+        states_str = states_str + "\"G4_LIGHT\":\""+(getState(STATE_LIGHTG4) ? "on" : "off")+"\", ";
+        states_str = states_str + "\"ALARM_HOUR\":\""+String(lcd_controller->getAlarmHour())+"\", ";
+        states_str = states_str + "\"BEEP_HOURLY\":\""+(lcd_controller->getHourlyBeep() ? "on" : "off")+"\", ";
+        states_str = states_str + "\"TIME\":\""+String(now())+"\", ";
+        states_str = states_str + "\"SYNC_INTERVAL\":\""+String(TIME_SYNC_INTERVAL)+"\", ";
+        states_str = states_str + "\"SENDING_INTERVAL\":\""+String(SENDING_INTERVAL)+"\", ";
+        states_str = states_str + "\"ERROR_CHECK_INTERVAL\":\""+String(ERROR_CHECK_INTERVAL)+"\", ";
+        states_str = states_str + "\"TIME_STATUS\":\""+String(timeStatus())+"\"";
+        states_str += "}";
+        delay(50);
+        sendMessage(connection_id, states_str, MAX_ATTEMPTS);
+        delay(100);
+      } else if ((param = StringHelper::getMessageParam(message, "LED_SET=", true))) {
+        byte led_s = StringHelper::readIntFromString(param, 0);
+        tone_controller->setLedControl(false);
+        if (led_s) {
+          ind_controller->SetProgLedState(1);
+        } else {
+          ind_controller->SetProgLedState(0);
+        }
+      } else if ((param = StringHelper::getMessageParam(message, "TONE=", true))) {
+        tone_controller->RunCommand(param);
+      } else if ((param = StringHelper::getMessageParam(message, "MEL=", true))) {
+        tone_controller->RunMelodyCommand(param);
+      } else if ((param = StringHelper::getMessageParam(message, "SERV_LT=", true))) {
+        if (param[0]) {
+          lcd_controller->setLCDText(param, LCD_PAGE_OUTER);
+          lcd_controller->fixPage(LCD_PAGE_OUTER);
+        } else {
+          lcd_controller->unfixPage();
+          lcd_controller->clearLCDText(LCD_PAGE_OUTER);
+        }
+      } else if ((param = StringHelper::getMessageParam(message, "SET_DISPLAY_ST=", true))) {
+        byte new_d_state = StringHelper::readIntFromString(param, 0);
+        if (new_d_state<2) lcd_controller->setLCDState(new_d_state!=0); else lcd_controller->setLCDAutoState();
+      } else if ((param = StringHelper::getMessageParam(message, "SET_FAN_ST=", true))) {
+        byte new_d_state = StringHelper::readIntFromString(param, 0);
+        if (new_d_state<2) ind_controller->setFanState(new_d_state!=0); else ind_controller->setFanAutoState();
+      } else if ((param = StringHelper::getMessageParam(message, "SET_LIGHT_ST=", true))) {
+        byte new_d_state = StringHelper::readIntFromString(param, 0);
+        if (new_d_state<2) ind_controller->setLightG4State(new_d_state!=0); else ind_controller->setLightG4AutoState();
+      } else if ((param = StringHelper::getMessageParam(message, "SET_TIME=", true))) {
+        if (param[0]=='R') {
+          time_return_wait = true;
+        } else {
+          time_t timestamp = StringHelper::readIntFromString(param, 0);
+          setTime(timestamp);
+          lcd_controller->redrawTimePage();
+        }
+      }  else if ((param = StringHelper::getMessageParam(message, "SET_FORECAST=", true))) {
+        if (param[0]=='R') {
+          forecast_return_wait = true;
+        } else {
+          StringHelper::degStrConvert(param);
+          lcd_controller->setLCDText(param, LCD_PAGE_FORECAST);
+        }
+      } else if ((param = StringHelper::getMessageParam(message, "SET_ALARM=", true))) {
+        bool b0 = param[0]=='1';
+        bool b1 = false;
+        unsigned b2 = 255;
+        if (param[1]==',') param+=2;
+        b1 = param[0]=='1';
+        if (param[1]==',') param+=2;
+        b2 = StringHelper::readIntFromString(param, 0);
+        lcd_controller->setHourlyBeep(b0);
+        if (b1) lcd_controller->setAlarmHour(b2);
       }
-    } else if ((param = StringHelper::getMessageParam(message, "TONE=", true))) {
-      tone_controller->RunCommand(param);
-    } else if ((param = StringHelper::getMessageParam(message, "MEL=", true))) {
-      tone_controller->RunMelodyCommand(param);
-    } else if ((param = StringHelper::getMessageParam(message, "SERV_LT=", true))) {
-      if (param[0]) {
-        lcd_controller->setLCDText(param, LCD_PAGE_OUTER);
-        lcd_controller->fixPage(LCD_PAGE_OUTER);
-      } else {
-        lcd_controller->unfixPage();
-        lcd_controller->clearLCDText(LCD_PAGE_OUTER);
-      }
-    } else if ((param = StringHelper::getMessageParam(message, "SET_DISPLAY_ST=", true))) {
-      byte new_d_state = StringHelper::readIntFromString(param, 0);
-      if (new_d_state<2) lcd_controller->setLCDState(new_d_state!=0); else lcd_controller->setLCDAutoState();
-    } else if ((param = StringHelper::getMessageParam(message, "SET_FAN_ST=", true))) {
-      byte new_d_state = StringHelper::readIntFromString(param, 0);
-      if (new_d_state<2) ind_controller->setFanState(new_d_state!=0); else ind_controller->setFanAutoState();
-    } else if ((param = StringHelper::getMessageParam(message, "SET_LIGHT_ST=", true))) {
-      byte new_d_state = StringHelper::readIntFromString(param, 0);
-      if (new_d_state<2) ind_controller->setLightG4State(new_d_state!=0); else ind_controller->setLightG4AutoState();
-    } else if ((param = StringHelper::getMessageParam(message, "SET_TIME=", true))) {
-      if (param[0]=='R') {
-        time_return_wait = true;
-      } else {
-        time_t timestamp = StringHelper::readIntFromString(param, 0);
-        setTime(timestamp);
-        lcd_controller->redrawTimePage();
-      }
-    }  else if ((param = StringHelper::getMessageParam(message, "SET_FORECAST=", true))) {
-      if (param[0]=='R') {
-        forecast_return_wait = true;
-      } else {
-		StringHelper::degStrConvert(param);
-        lcd_controller->setLCDText(param, LCD_PAGE_FORECAST);
-      }
-    } else if ((param = StringHelper::getMessageParam(message, "SET_ALARM=", true))) {
-      bool b0 = param[0]=='1';
-      bool b1 = false;
-      unsigned b2 = 255;
-      if (param[1]==',') param+=2;
-      b1 = param[0]=='1';
-      if (param[1]==',') param+=2;
-      b2 = StringHelper::readIntFromString(param, 0);
-      lcd_controller->setHourlyBeep(b0);
-      if (b1) lcd_controller->setAlarmHour(b2);
-    }
-    delay (100);
+      delay (100);
+
+    } while (fpos != NULL && strlen(fpos+1) > 0);
   }
 }
 
