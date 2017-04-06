@@ -56,16 +56,16 @@ class LCDController
     static LCDController* Instance() {
       if(!_self_controller)
       {
-          _self_controller = new LCDController();
+        _self_controller = new LCDController();
       }
       return _self_controller;
     }
     static bool DeleteInstance() {
       if(_self_controller)
       {
-          delete _self_controller;
-          _self_controller = NULL;
-          return true;
+        delete _self_controller;
+        _self_controller = NULL;
+        return true;
       }
       return false;
     }

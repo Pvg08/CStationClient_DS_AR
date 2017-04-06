@@ -9,12 +9,21 @@
 class GuardController 
 {
   private:
-	/* watch mode */
-	bool watch_mode;
-	bool is_watch_delay, is_alert_delay;
-	volatile bool has_presence;
-	unsigned long int watch_delay_millis;
-	
+  	/* watch mode */
+  	bool watch_mode;
+  	bool is_watch_delay, is_alert_delay;
+  	volatile bool has_presence;
+  	unsigned long int watch_delay_millis;
+
+    GuardController() 
+    {
+      watch_mode = false;
+      is_watch_delay = false;
+      is_alert_delay = false;
+      has_presence = false;
+      watch_delay_millis = 0;
+    }
+  
   public:
     static GuardController *_self_controller;
 
@@ -33,15 +42,6 @@ class GuardController
           return true;
       }
       return false;
-    }
-
-    GuardController() 
-    {
-  	  watch_mode = false;
-  	  is_watch_delay = false;
-  	  is_alert_delay = false;
-  	  has_presence = false;
-  	  watch_delay_millis = 0;
     }
 
   	void periodTimerSignal()

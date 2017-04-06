@@ -9,18 +9,18 @@ class StringHelper
     {
       int param_len = strlen(param_name);
       if (strncmp(message, param_name, param_len)==0) {
-          message += param_len;
-          int message_len = strlen(message);
-          int i;
-          
-          if (break_line) {
-            for(i = 0; i<message_len && message[i]!='\r'; i++);
-          } else {
-            i = message_len-1;
-          }
-          
-          message[i]=0;
-          return message;
+        message += param_len;
+        int message_len = strlen(message);
+        int i;
+        
+        if (break_line) {
+          for(i = 0; i<message_len && message[i]!='\r'; i++);
+        } else {
+          i = message_len-1;
+        }
+        
+        message[i]=0;
+        return message;
       }
       return NULL;
     }
@@ -78,17 +78,17 @@ class StringHelper
       return foundOK;
     }
 	
-	static void degStrConvert(char *str)
-	{
-		int i;
-        int str_len = strlen(str);
-        for (i=0; i<str_len-1; i++)
-        {
-          if ( (str[i]=='*') && (str[i+1]=='C') ) { 
-            str[i] = '\337';
-          }
+  	static void degStrConvert(char *str)
+  	{
+  		int i;
+      int str_len = strlen(str);
+      for (i=0; i<str_len-1; i++)
+      {
+        if ( (str[i]=='*') && (str[i+1]=='C') ) { 
+          str[i] = '\337';
         }
-	}
+      }
+  	}
 };
 
 #endif

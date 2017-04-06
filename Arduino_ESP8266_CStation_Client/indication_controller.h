@@ -51,26 +51,6 @@ class IndicationController
     bool light_level_initialized;
     volatile bool light_need_update;
 
-  public:
-    static IndicationController *_self_controller;
-
-    static IndicationController* Instance() {
-      if(!_self_controller)
-      {
-          _self_controller = new IndicationController();
-      }
-      return _self_controller;
-    }
-    static bool DeleteInstance() {
-      if(_self_controller)
-      {
-          delete _self_controller;
-          _self_controller = NULL;
-          return true;
-      }
-      return false;
-    }
-
     IndicationController() 
     {
       pinMode(LED_BLUE_PIN, OUTPUT);
@@ -103,6 +83,26 @@ class IndicationController
       }
     }
 
+  public:
+    static IndicationController *_self_controller;
+
+    static IndicationController* Instance() {
+      if(!_self_controller)
+      {
+        _self_controller = new IndicationController();
+      }
+      return _self_controller;
+    }
+    static bool DeleteInstance() {
+      if(_self_controller)
+      {
+        delete _self_controller;
+        _self_controller = NULL;
+        return true;
+      }
+      return false;
+    }
+
     void setRed(bool state)
     {
       led_red_state = state;
@@ -118,14 +118,14 @@ class IndicationController
       led_blue_state = state;
       digitalWrite(LED_BLUE_PIN, state ? HIGH : LOW);
     }
-	void toggleBlue()
-	{
-		setBlue(!led_blue_state);
-	}
-	void toggleLight()
-	{
-		setLight(!light_g4_state);
-	}
+  	void toggleBlue()
+  	{
+  		setBlue(!led_blue_state);
+  	}
+  	void toggleLight()
+  	{
+  		setLight(!light_g4_state);
+  	}
     void setLight(bool state)
     {
       light_g4_state = state;

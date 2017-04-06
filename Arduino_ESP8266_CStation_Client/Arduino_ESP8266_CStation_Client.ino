@@ -2,7 +2,7 @@
 #include <EEPROM.h>
 #include <Timer1.h>
 #include <Timer5.h>
-#include <Time.h>
+#include <TimeLib.h>
 #include <Wire.h>
 #include <LiquidCrystal_I2C.h>
 #include "eeprom_helper.h"
